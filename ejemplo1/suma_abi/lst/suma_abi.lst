@@ -1,0 +1,44 @@
+ARM GAS  src/suma_abi.s 			page 1
+
+
+   1              	.extern suma_c
+   2              	.extern mult_c
+   3              	@ .extern _div_c
+   4              	.extern _PUBLIC_STACK_INIT
+   5              	
+   6              	.global _start @Indica donde arranca el codigo
+   7              	
+   8              	.code 32
+   9              	.section .text
+  10              	_start:
+  11 0000 20D09FE5 	    LDR SP, = _PUBLIC_STACK_INIT
+  12              	
+  13 0004 1000A0E3 	    MOV R0, #0x10
+  14 0008 2010A0E3 	    MOV R1, #0x20
+  15              	
+  16              	    /*B suma_c*/
+  17              	
+  18 000c 18A09FE5 	    LDR R10, = suma_c
+  19 0010 0FE0A0E1 	    MOV LR, PC
+  20 0014 1AFF2FE1 	    BX R10 @Branch con posibilidad de cambio de ARM a thumb
+  21              	
+  22 0018 10A09FE5 	    LDR R10, = mult_c
+  23 001c 0FE0A0E1 	    MOV LR, PC
+  24 0020 1AFF2FE1 	    BX R10
+  25              	
+  26 0024 FEFFFFEA 	    B .
+  27 0028 00000000 	.end
+  27      00000000 
+  27      00000000 
+ARM GAS  src/suma_abi.s 			page 2
+
+
+DEFINED SYMBOLS
+      src/suma_abi.s:10     .text:0000000000000000 _start
+      src/suma_abi.s:11     .text:0000000000000000 $a
+      src/suma_abi.s:27     .text:0000000000000028 $d
+
+UNDEFINED SYMBOLS
+_PUBLIC_STACK_INIT
+suma_c
+mult_c
