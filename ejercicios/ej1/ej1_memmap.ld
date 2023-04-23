@@ -3,22 +3,23 @@
 */ 
 OUTPUT_FORMAT("elf32-littlearm")
 OUTPUT_ARCH(arm)
-ENTRY(file)
 
 
 /*
     Definiciones de simbolos necesarios
 */
-_PUBLIC_RAM_INIT = 0X70010000;
-_PUBLIC_STACK_INIT = 0X70020000;
+_PUBLIC_RAM_INIT = 0x70010000;
+_PUBLIC_STACK_INIT = 0x70020000;
+_PUBLIC_CPY_INIT = 0x70030000;
 
 /*
     Definiciones del mapa de memoria
 */
 MEMORY
 {
-    public_ram  : org = _PUBLIC_RAM_INIT, len = 0x1000
-    public_stack : org = _PUBLIC_STACK_INIT, len = 0x1000
+    public_ram      : org = _PUBLIC_RAM_INIT, len = 0x1000
+    public_stack    : org = _PUBLIC_STACK_INIT, len = 0x1000
+    public_cpy      : org = _PUBLIC_CPY_INIT, len = 0x1000
 }
 
 /*

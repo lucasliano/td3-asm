@@ -8,7 +8,8 @@
 #@credits       Schiavoni Leandro                               #
 #################################################################
 
-ROOT_NAME = ${notdir ${shell pwd}} # Main folder name
+# Main folder name
+ROOT_NAME = ${notdir ${shell pwd}}
 
 # Configs
 CHAIN=arm-none-eabi
@@ -49,6 +50,12 @@ clean:
 	rm -rf $(OBJ)
 	rm -rf $(BIN)
 	rm -rf $(LST)
+
+help:
+	@echo "make build: Generates .bin"
+	@echo "make clean: Deletes folders: bin/ lst/ obj/"
+	@echo "make qemu:  Runs Cortex-A8 emulator"
+	@echo "make ddd:   Runs the debugger"
 
 #################################################################
 ##                         Auto.  Rules                        ##

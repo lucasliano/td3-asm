@@ -1,31 +1,27 @@
 .extern _PUBLIC_STACK_INIT  @ Posición del stack
+
+.extern _PUBLIC_RAM_INIT    @ Posición comienzo de RAM
+.extern _PUBLIC_CPY_INIT    @ Posición para copiar código
 .extern td3_memcopy         @ Posición del código en C
 
 .global _start              @ Indica donde arranca el codigo
-
-.code 32                    @ TODO: Consultar que hace esto
+.code 32                    @ .code directive marks the beginning of the code segment, where all executable statements in a program are located
 .section .text
 _start:
     LDR SP, = _PUBLIC_STACK_INIT
 
-    MOV R0, #0x10
-    MOV R1, #0x20
+    LDR R0, = _PUBLIC_RAM_INIT      @ Origen
+    LDR R1, = _PUBLIC_CPY_INIT      @ Destino
+    MOV R2, #0x1000                 @ Cant Bytes
 
-    /*B suma_c*/
+    LDR R10, = td3_memcopy          @ Cargamos donde queremos saltar
+    MOV LR, PC                      @ Cargamos donde debemos retornar
+    BX  R10                         @ Hacemos el salto
 
-    LDR R10, = suma_c
-    MOV LR, PC
-    BX R10 @ Branch con posibilidad de cambio de ARM a thumb
+    B _end
 
-    LDR R10, = mult_c
-    MOV LR, PC
-    BX R10
 
+_end:
     B .
-
-
-end:
-    B .
-
 
 .end
