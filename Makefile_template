@@ -8,7 +8,8 @@
 #@credits       Schiavoni Leandro                               #
 #################################################################
 
-ROOT_NAME = ${notdir ${shell pwd}} # Main folder name
+# Main folder name
+ROOT_NAME = ${notdir ${shell pwd}}
 
 # Configs
 CHAIN=arm-none-eabi
