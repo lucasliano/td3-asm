@@ -73,7 +73,7 @@ $(OBJ)/${ROOT_NAME}.elf: ${OBJ_FILES_S} ${OBJ_FILES_C}
 	@echo "Linkeando..."
 	@mkdir -p obj
 	@mkdir -p lst
-	$(CHAIN)-ld -T ${ROOT_NAME}_memmap.ld ${OBJ_FILES_S} ${OBJ_FILES_C} -o $@ -Map $(LST)/$(ROOT_NAME).map
+	$(CHAIN)-ld -T memmap.ld ${OBJ_FILES_S} ${OBJ_FILES_C} -o $@ -Map $(LST)/$(ROOT_NAME).map
 	@echo "Linkeo finalizado"
 	@echo ""
 	@echo "Generating memory map and symbol information files.."
