@@ -14,7 +14,6 @@ ROOT_NAME = ${notdir ${shell pwd}}
 # Configs
 CHAIN=arm-none-eabi
 CFLAGS=-std=gnu99 -Wall -mcpu=cortex-a8 -MD -I${INC}
-LDEXTRAS= -lc -L /usr/lib/arm-none-eabi/newlib/
 
 # Folders
 # --- Added to .gitignore ---
@@ -73,7 +72,7 @@ $(OBJ)/${ROOT_NAME}.elf: ${OBJ_FILES_S} ${OBJ_FILES_C}
 	@echo "Linkeando..."
 	@mkdir -p obj
 	@mkdir -p lst
-	$(CHAIN)-ld -T memmap.ld ${OBJ_FILES_S} ${OBJ_FILES_C} -o $@ -Map $(LST)/$(ROOT_NAME).map
+	$(CHAIN)-ld --orphan-handling=discard -T memmap.ld ${OBJ_FILES_S} ${OBJ_FILES_C} -o $@ -Map $(LST)/$(ROOT_NAME).map
 	@echo "Linkeo finalizado"
 	@echo ""
 	@echo "Generating memory map and symbol information files.."
