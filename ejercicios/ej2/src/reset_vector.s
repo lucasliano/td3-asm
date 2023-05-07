@@ -1,7 +1,12 @@
-.code 32                    @ Arranca el código en modo ARM (32b)
-.extern _start              @ Indica al linker donde arranca el codigo
-.section .reset_vector_code
+.code 32
+/*--- Variables globales --- */
+.global _reset_vector
 
+/*--- Variables importadas --- */
+.extern _start              @ Indica al linker donde arranca el codigo
+
+/*--- Arranca la sección --- */
+.section .reset_vector_code
 _reset_vector:
     B _start
 

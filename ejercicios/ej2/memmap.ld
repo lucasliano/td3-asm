@@ -12,6 +12,8 @@ _PUBLIC_ROM_INIT = 0x70010000;
 _PUBLIC_STACK_INIT = 0x70020000;
 _PUBLIC_RAM_INIT = 0x70030000;
 
+_PUBLIC_EXCEPTION_VECTOR = 0x4030CE00;
+
 /*
     Definiciones del mapa de memoria
 */
@@ -32,13 +34,19 @@ SECTIONS{
         *(.reset_vector_code*)
         *(.start_code*)
         *(.text*)
+    } > public_rom
+
+    _PUBLIC_HANDLERS_LMA_INIT = LOADADDR(.text) + SIZEOF(.text);
+    .handlers _PUBLIC_EXCEPTION_VECTOR : AT(_PUBLIC_HANDLERS_LMA_INIT)
+    {
+        *(.handlers*)
     }
 
-    .kernel _PUBLIC_RAM_INIT :
-        AT(LOADADDR(.text) + SIZEOF(.text)) 
+    _PUBLIC_KERNEL_LMA_INIT = LOADADDR(.handlers) + SIZEOF(.handlers);
+    .kernel _PUBLIC_RAM_INIT : AT (_PUBLIC_KERNEL_LMA_INIT) 
     {
         *(.kernel_test*)
-    } 
+    } > public_ram
 
 
     .bss : {                /*Variables no inicializadas*/
@@ -46,6 +54,6 @@ SECTIONS{
         __bss_start__ = .;
         *(.bss*)
         __bss_end__ = .;
-    }  
+    } > public_ram 
 }
 
