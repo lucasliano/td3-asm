@@ -1,3 +1,4 @@
 obj/
 bin/
 lst/
+.gdb_history

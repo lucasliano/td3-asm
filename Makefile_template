@@ -4,7 +4,7 @@
 #                                                               #
 #@author        Lucas Liaño                                     #                                                                      #
 #@brief         Makefile para TD3.                              #
-#@date          23/04/2023                                      #
+#@date          25/05/2023                                      #
 #@credits       Schiavoni Leandro                               #
 #################################################################
 
@@ -13,8 +13,9 @@ ROOT_NAME = ${notdir ${shell pwd}}
 
 # Configs
 CHAIN=arm-none-eabi
-CFLAGS=-std=gnu99 -Wall -mcpu=cortex-a8 -MD -I${INC}
-LDEXTRAS= -lc -L /usr/lib/arm-none-eabi/newlib/
+CFLAGS=-g -std=gnu99 -Wall -mcpu=cortex-a8 -MD -I${INC}
+ASFLAGS=-g
+LDFLAGS=-g --orphan-handling=discard -T
 
 # Folders
 # --- Added to .gitignore ---
@@ -40,22 +41,27 @@ default: build
 
 build: $(BIN)/${ROOT_NAME}.bin $(OBJ)/${ROOT_NAME}.elf
 
-qemu: $(BINS) $(ELFS)
+qemu:
 	qemu-system-arm -M realview-pb-a8 -m 32M -no-reboot -nographic -monitor telnet:127.0.0.1:1234,server,nowait -kernel ${BIN}/${ROOT_NAME}.bin -S -gdb tcp::2159
 
 ddd:
 	cd .. && ddd --debugger gdb-multiarch ${ROOT_NAME}/${OBJ}/${ROOT_NAME}.elf
 
+debug:
+	qemu-system-arm -M realview-pb-a8 -m 32M -no-reboot -nographic -monitor telnet:127.0.0.1:1234,server,nowait -kernel ${BIN}/${ROOT_NAME}.bin -S -gdb tcp::2159 & gdb-multiarch ${OBJ}/${ROOT_NAME}.elf
+
 clean:
 	rm -rf $(OBJ)
 	rm -rf $(BIN)
 	rm -rf $(LST)
-	
+	rm -f .gdb_history
+
 help:
 	@echo "make build: Generates .bin"
 	@echo "make clean: Deletes folders: bin/ lst/ obj/"
 	@echo "make qemu:  Runs Cortex-A8 emulator"
 	@echo "make ddd:   Runs the debugger"
+	@echo "make debug: Runs Cortex-A8 emulator and gdb-multiarch"
 
 #################################################################
 ##                         Auto.  Rules                        ##
@@ -73,7 +79,7 @@ $(OBJ)/${ROOT_NAME}.elf: ${OBJ_FILES_S} ${OBJ_FILES_C}
 	@echo "Linkeando..."
 	@mkdir -p obj
 	@mkdir -p lst
-	$(CHAIN)-ld -T memmap.ld ${OBJ_FILES_S} ${OBJ_FILES_C} -o $@ -Map $(LST)/$(ROOT_NAME).map
+	$(CHAIN)-ld ${LDFLAGS} memmap.ld ${OBJ_FILES_S} ${OBJ_FILES_C} -o $@ -Map $(LST)/$(ROOT_NAME).map
 	@echo "Linkeo finalizado"
 	@echo ""
 	@echo "Generating memory map and symbol information files.."
@@ -88,7 +94,7 @@ $(OBJ)/%_s.o: $(SRC)/%.s
 	@mkdir -p lst
 	@echo "Assembling $<"
 	@echo "Assembling $@"
-	$(CHAIN)-as $< -o $@ -a > $(basename $@).lst
+	$(CHAIN)-as ${ASFLAGS} $< -o $@ -a > $(basename $@).lst
 
 # C sources compiling
 $(OBJ)/%_c.o: $(SRC)/%.c
