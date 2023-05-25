@@ -6,16 +6,8 @@ Se desea escribir un programa para simular en QEMU, que en el vector de arranque
 void *td3_memcopy(void *destino, const void *origen, unsigned int num_bytes);
 ```
 
-Una vez que se copia a esa dirección debe saltar a una etiqueta __end__, en donde se espera una instrucción que frene la ejecución del procesador.
+Una vez que se copia esta sección, el programa en el vector de arranque debe saltar al kernel (sección copiada) y debe quedar en un ciclo infinito.
 
 La pila debe ubicarse en 0x70020000.
 
-Se sugiere utilizar un archivo de linker script para poder gestionar las áreas de memoria durante el ensamblado del binario.
-
-## Objetivos conceptuales
-
-1. Familiarizarse con los comandos de QEMU y su utilización
-2. Familiarizarse con el Linker Script
-3. Entender el concepto de ABI para poder utilizar convenientemente C y ASM, aprovechando sus ventajas para cada caso.
-4. Entender manejo de pila __R13__
-5. Entender como cargar el registro __LR__ para poder retornar de las funciones.
+Las dos secciones de código deben quedar ensambladas una atrás de la otra. Para tal fin se sugiere utilizar un archivo de linker script de modo de gestionar las áreas de memoria durante el ensamblado del binario.

@@ -8,18 +8,18 @@ OUTPUT_ARCH(arm)
 /*
     Definiciones de simbolos necesarios
 */
-_PUBLIC_RAM_INIT = 0x70010000;
+_PUBLIC_ROM_INIT = 0x70010000;
 _PUBLIC_STACK_INIT = 0x70020000;
-_PUBLIC_CPY_INIT = 0x70030000;
+_PUBLIC_RAM_INIT = 0x70030000;
 
 /*
     Definiciones del mapa de memoria
 */
 MEMORY
 {
-    public_ram      : org = _PUBLIC_RAM_INIT, len = 0x1000
+    public_rom      : org = _PUBLIC_ROM_INIT, len = 0x1000
     public_stack    : org = _PUBLIC_STACK_INIT, len = 0x1000
-    public_cpy      : org = _PUBLIC_CPY_INIT, len = 0x1000
+    public_ram      : org = _PUBLIC_RAM_INIT, len = 0x1000
 }
 
 /*
@@ -35,7 +35,15 @@ SECTIONS{
           terminar siendo muy pesado
         */
         *(.text*) /*Tiene que coincidir con la seccion en el código para que sirva de entrada*/
+    } > public_rom
+
+    /* Acá generamos una sección que se va a ejecutar en RAM, pero que se va a ensamblar en ROM */
+    _PUBLIC_KERNEL_LMA_INIT = LOADADDR(.text) + SIZEOF(.text);
+    .kernel _PUBLIC_RAM_INIT : AT (_PUBLIC_KERNEL_LMA_INIT) 
+    {
+        *(.kernel*)
     } > public_ram
+    _PUBLIC_KERNEL_SIZE = SIZEOF(.kernel);
 
     .data : {*(.data*)} > public_ram /*Ensambla todas las secciones data en una seccion data de salida*/
 

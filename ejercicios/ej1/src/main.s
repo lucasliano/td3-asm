@@ -10,18 +10,15 @@
 _start:
     LDR SP, = _PUBLIC_STACK_INIT
 
-    LDR R0, = _PUBLIC_RAM_INIT      @ Origen
-    LDR R1, = _PUBLIC_CPY_INIT      @ Destino
-    MOV R2, #0x1000                 @ Cant Bytes
-
-    LDR R10, = td3_memcopy          @ Cargamos donde queremos saltar
-    MOV LR, PC                      @ Cargamos donde debemos retornar
-    BX  R10                         @ Hacemos el salto
-
-    B _end
+    @ Inicio copio el kernel a la RAM
+    LDR R0, = _PUBLIC_KERNEL_LMA_INIT   @ Origen
+    LDR R1, = _PUBLIC_RAM_INIT          @ Destino
+    LDR R2, = _PUBLIC_KERNEL_SIZE       @ Cant Bytes
+    LDR R10, = memcopy                  @ Cargamos donde queremos saltar
+    MOV LR, PC                          @ Cargamos donde debemos retornar
+    BX  R10                             @ Hacemos el salto
 
 
-_end:
-    B .
+    B _main
 
 .end
