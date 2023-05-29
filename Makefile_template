@@ -48,7 +48,7 @@ ddd:
 	cd .. && ddd --debugger gdb-multiarch ${ROOT_NAME}/${OBJ}/${ROOT_NAME}.elf
 
 debug:
-	qemu-system-arm -M realview-pb-a8 -m 32M -no-reboot -nographic -monitor telnet:127.0.0.1:1234,server,nowait -kernel ${BIN}/${ROOT_NAME}.bin -S -gdb tcp::2159 & gdb-multiarch -iex "set auto-load safe-path /" ${OBJ}/${ROOT_NAME}.elf
+	qemu-system-arm -M realview-pb-a8 -m 32M -no-reboot -nographic -monitor telnet:127.0.0.1:1234,server,nowait -kernel ${BIN}/${ROOT_NAME}.bin -S -gdb tcp::2159 & gdb-multiarch -iex "add-auto-load-safe-path /" ${OBJ}/${ROOT_NAME}.elf
 
 clean:
 	rm -rf $(OBJ)
