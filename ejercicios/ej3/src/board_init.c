@@ -6,10 +6,43 @@ void configureGIC0();
 void configureTIMER0();
 
 __attribute__((section(".text"))) void preKernelInit(){
+    // NOTE: Ver que solamente se están alterando los bits [7:0] por usar el _c.
+    //       Esto se puede ver mejor en la sección B9.3.11 del ARM Architecture Reference Manual.
+    
+    // Inicialización del Stack Pointer de cada modo. Dejamos deshabilitadas las interrupciones.
+    asm(".include \"defines_asm.h\"");
+    // --- FIQ ---
+    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (FIQ_MODE)");
+    asm("LDR SP, =_FIQ_STACK_TOP");
+
+    // --- IRQ ---
+    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (IRQ_MODE)");
+    asm("LDR SP, =_IRQ_STACK_TOP");
+
+    // --- SVC ---
+    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (SVC_MODE)");
+    asm("LDR SP, =_SVC_STACK_TOP");
+
+    // --- ABT ---
+    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (ABT_MODE)");
+    asm("LDR SP, =_ABT_STACK_TOP");
+
+    // --- UND ---
+    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (UND_MODE)");
+    asm("LDR SP, =_UND_STACK_TOP");
+
+    // --- SYS ---
+    asm("MSR cpsr_c,(1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (SYS_MODE)");
+    asm("LDR SP, =_SYS_STACK_TOP");
+    // Nos quedamos en el sys corriendo
+    
+    
+    // --- Config de los timers ---
     configureGIC0();
     configureTIMER0();
+    asm("BL _irq_enable");
     
-    return;
+    asm("B _main");
 }
 
 
@@ -38,4 +71,3 @@ __attribute__((section(".text"))) void configureTIMER0() {
     TIMER0->Timer1Ctrl    |= 0x00000020; //Habilita la interrupción por timer
     TIMER0->Timer1Ctrl    |= 0x00000080; //Activa el timer
 }
-
