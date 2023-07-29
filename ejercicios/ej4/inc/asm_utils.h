@@ -13,8 +13,8 @@
  *             Ref. 7: Instruction Set Assembly Guide for ARMv7 and earlier ARM Architectures (Version 2.0) - Ref. Guide (ISAG)
  **/
 
-#ifndef __LOW_LEVE_ACCESS_H
-#define __LOW_LEVE_ACCESS_H
+#ifndef __ASM_UTILS_H
+#define __ASM_UTILS_H
 
 #include <stdint.h>
 
@@ -42,22 +42,13 @@ typedef union
         };
 } xPSR;
 
-
 extern void _irq_enable(void);
 extern void _irq_disable(void);
-extern void _MMU_Enable(void);
-extern void _MMU_Disable(void);
-extern void _LOAD_ISR_Vectors_Base(uint32_t );
 extern void _WRITE_8(uint32_t , uint8_t );
 extern void _WRITE_16(uint32_t , uint16_t );
 extern void _WRITE_32(uint32_t , uint32_t );
 extern uint8_t _READ_8(uint32_t );
 extern uint16_t _READ_16(uint32_t );
 extern uint32_t _READ_32(uint32_t );
-extern void _HALT_CPU(void);
-extern uint32_t _READ_CPSR_REGS(void);
-extern void _EOI(void);
 
-#define HALT_CPU_m  asm("WFI");
-
-#endif /* defined(__LOW_LEVE_ACCESS_H) */
+#endif /* defined(__ASM_UTILS_H) */

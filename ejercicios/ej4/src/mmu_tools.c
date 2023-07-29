@@ -1,10 +1,5 @@
 #include "../inc/mmu_tools.h"
-#include "../inc/low_level_cpu_access.h"
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) ID_MMFR0 MMU_Get_ID_MMFR0(void)
 {
     ID_MMFR0 mmfr0;
@@ -15,10 +10,6 @@ __attribute__((section(".text"))) ID_MMFR0 MMU_Get_ID_MMFR0(void)
     return mmfr0;
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) ID_MMFR1 MMU_Get_ID_MMFR1(void)
 {
     ID_MMFR1 mmfr1;
@@ -29,10 +20,6 @@ __attribute__((section(".text"))) ID_MMFR1 MMU_Get_ID_MMFR1(void)
     return mmfr1;
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) ID_MMFR2 MMU_Get_ID_MMFR2(void)
 {
     ID_MMFR2 mmfr2;
@@ -43,10 +30,6 @@ __attribute__((section(".text"))) ID_MMFR2 MMU_Get_ID_MMFR2(void)
     return mmfr2;
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) ID_MMFR3 MMU_Get_ID_MMFR3(void)
 {
     ID_MMFR3 mmfr3;
@@ -57,10 +40,6 @@ __attribute__((section(".text"))) ID_MMFR3 MMU_Get_ID_MMFR3(void)
     return mmfr3;
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) TTBCR MMU_Get_TTBCR(void)
 {
     TTBCR ttbcr;
@@ -71,10 +50,6 @@ __attribute__((section(".text"))) TTBCR MMU_Get_TTBCR(void)
     return ttbcr;
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) void MMU_Set_TTBCR(TTBCR ttbcr)
 {
     asm("LDR R0,%0" : "=m"(ttbcr.ttbcr));
@@ -83,10 +58,6 @@ __attribute__((section(".text"))) void MMU_Set_TTBCR(TTBCR ttbcr)
     asm("MCR p15, 0, R0, c2, c0, 2");
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) DACR MMU_Get_DACR(void)
 {
     DACR dacr;
@@ -97,10 +68,6 @@ __attribute__((section(".text"))) DACR MMU_Get_DACR(void)
     return dacr;
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) void MMU_Set_DACR(DACR dacr)
 {
     asm("LDR R0,%0" : "=m"(dacr.dacr));
@@ -109,10 +76,6 @@ __attribute__((section(".text"))) void MMU_Set_DACR(DACR dacr)
     asm("MCR p15, 0, R0, c3, c0, 0");
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) TTBR0 MMU_Get_TTBR0()
 {
     TTBR0 ttbr0;
@@ -123,10 +86,6 @@ __attribute__((section(".text"))) TTBR0 MMU_Get_TTBR0()
     return ttbr0;
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) void MMU_Set_TTBR0(TTBR0 ttbr0)
 {       
     
@@ -137,10 +96,6 @@ __attribute__((section(".text"))) void MMU_Set_TTBR0(TTBR0 ttbr0)
     
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) TTBR1 MMU_Get_TTBR1()
 {
     TTBR1 ttbr1;
@@ -151,10 +106,6 @@ __attribute__((section(".text"))) TTBR1 MMU_Get_TTBR1()
     return ttbr1;
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) void MMU_Set_TTBR1(TTBR1 ttbr1)
 {
     asm("LDR R0,%0" : "=m"(ttbr1.ttbr1));
@@ -163,10 +114,6 @@ __attribute__((section(".text"))) void MMU_Set_TTBR1(TTBR1 ttbr1)
     asm("MCR p15, 0, R0, c2, c0, 1");
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) SCTLR MMU_Get_SCTLR()
 {
     SCTLR sctlr;
@@ -177,10 +124,6 @@ __attribute__((section(".text"))) SCTLR MMU_Get_SCTLR()
     return sctlr;
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) void MMU_Set_SCTLR(SCTLR sctlr)
 {
     asm("LDR R0,%0" : "=m"(sctlr.sctlr));
@@ -189,10 +132,6 @@ __attribute__((section(".text"))) void MMU_Set_SCTLR(SCTLR sctlr)
     asm("MCR p15, 0, R0, c1, c0, 0");
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) uint32_t MMU_Get_VBAR()
 {
     uint32_t vbar;
@@ -203,22 +142,19 @@ __attribute__((section(".text"))) uint32_t MMU_Get_VBAR()
     return vbar;
 }
 
-/**
- * @brief 
- * 
- */
 __attribute__((section(".text"))) void MMU_Set_VBAR(uint32_t vbar)
 {
     asm("LDR R0,%0" : "=m"(vbar));
     asm("MCR p15, 0, R0, c12, c0, 0");
 }
 
-/**
- * @brief Esta función obtiene el valor de la dirección física de la primer tabla de traducción de la MMU
- * 
- */
+
 __attribute__((section(".text"))) uint32_t MMU_Get_FirstLevelTranslationTable_PhysicalAddress(void)
 {
+    /**
+    * @brief Esta función obtiene el valor de la dirección física de la primer tabla de traducción de la MMU
+    * 
+    */
     TTBCR ttbcr = MMU_Get_TTBCR();
     TTBR0 ttbr0 = MMU_Get_TTBR0();
     //TTBR1 ttbr1 = MMU_Get_TTBR1();
@@ -234,12 +170,12 @@ __attribute__((section(".text"))) uint32_t MMU_Get_FirstLevelTranslationTable_Ph
     return tt_ph_addr;
 }
 
-/**
- * @brief Esta función setea la dirección física de la primer tabla de traducción de la MMU
- * 
- */
 __attribute__((section(".text"))) void MMU_Set_FirstLevelTranslationTable_PhysicalAddress(uint32_t ph_addr)
 {
+    /**
+    * @brief Esta función setea la dirección física de la primer tabla de traducción de la MMU
+    * 
+    */
     TTBCR ttbcr = MMU_Get_TTBCR();
     TTBR0 ttbr0 = MMU_Get_TTBR0();
     //TTBR1 ttbr1 = MMU_Get_TTBR1();
@@ -253,12 +189,12 @@ __attribute__((section(".text"))) void MMU_Set_FirstLevelTranslationTable_Physic
     }
 }
 
-/**
- * @brief Esta función es un wrapper para habilitar o no el uso del access flag en los descriptores
- * 
- */
 __attribute__((section(".text"))) void MMU_Enable_AccessFlag(ENABLEAF af)
 {
+    /**
+    * @brief Esta función es un wrapper para habilitar o no el uso del access flag en los descriptores
+    * 
+    */
     SCTLR sctlr = MMU_Get_SCTLR();
 
     sctlr.AFE = af;
@@ -266,27 +202,25 @@ __attribute__((section(".text"))) void MMU_Enable_AccessFlag(ENABLEAF af)
     MMU_Set_SCTLR(sctlr);
 }
 
-/**
- * @brief Esta función es un wrapper para habilitar o no el uso de la MMU
- * 
- */
 __attribute__((section(".text"))) void MMU_Enable(MMUENABLE mmuenable)
 {
+    /**
+    * @brief Esta función es un wrapper para habilitar o no el uso de la MMU
+    * 
+    */
     SCTLR sctlr = MMU_Get_SCTLR();
 
     sctlr.M = mmuenable;
 
-    // dbg("\r\n\tEscribiendo SCTLR con 0x%x. Chan chan...",sctlr.sctlr);
     MMU_Set_SCTLR(sctlr);
-    // dbg("\r\n\tEureka!");
 }
 
-/**
- * @brief Invalida todas las entradas de la TLB siguiendo el TRM B3.18.7
- * 
- */
 __attribute__((section(".text"))) void MMU_Invalidate_TLB(void)
 {
+    /**
+    * @brief Invalida todas las entradas de la TLB siguiendo el TRM B3.18.7
+    * 
+    */
     asm("MCR p15, 0, R0, c8, c6, 0"); // Invalidate entire DATA TLB
     asm("MCR p15, 0, R0, c8, c5, 0"); // Invalidate entire INSTRUCTION TLB
     asm("MCR p15, 0, R0, c8, c7, 0"); // Invalidate entire UNIFIED TLB
@@ -294,5 +228,13 @@ __attribute__((section(".text"))) void MMU_Invalidate_TLB(void)
 
 __attribute__((section(".text"))) void MMU_MapNewPage(uint32_t address, uint32_t address2, uint8_t pageSize, uint8_t blockExecution, uint8_t memoryType, uint8_t memoryDescription, uint8_t pageShareable, uint8_t privilage)
 {
+    /**
+    * @brief Crea una nueva página a partir de investigar la tabla L1 y L2
+    * 
+    */
+    int a;
+
+
+
     return;
 }

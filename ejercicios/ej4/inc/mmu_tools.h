@@ -469,27 +469,41 @@ typedef union {
     };
 } DACR;
 
+// Estos registros permiten ver que tiene implementado la arquitectura con la que trabajamos
 ID_MMFR0 MMU_Get_ID_MMFR0(void);
 ID_MMFR1 MMU_Get_ID_MMFR1(void);
 ID_MMFR2 MMU_Get_ID_MMFR2(void);
 ID_MMFR3 MMU_Get_ID_MMFR3(void);
-TTBCR MMU_Get_TTBCR(void);
-void MMU_Set_TTBCR(TTBCR);
-TTBR0 MMU_Get_TTBR0(void);
-void MMU_Set_TTBR0(TTBR0);
-TTBR1 MMU_Get_TTBR1(void);
-void MMU_Set_TTBR1(TTBR1);
-SCTLR MMU_Get_SCTLR(void);
-void MMU_Set_SCTLR(SCTLR);
-DACR MMU_Get_DACR(void);
-void MMU_Set_DACR(DACR);
+// Estos registros entiendo que no se utilizan.
 void MMU_Set_VBAR(uint32_t);
 uint32_t MMU_Get_VBAR();
-uint32_t MMU_Get_FirstLevelTranslationTable_PhysicalAddress(void);
+
+// --- Translation Table Base Control Register ---
+TTBCR MMU_Get_TTBCR(void);
+void MMU_Set_TTBCR(TTBCR);
+
+// --- Translation Table Base Register ---
+TTBR0 MMU_Get_TTBR0(void);
+void MMU_Set_TTBR0(TTBR0);
+
+// >>>  Solamente se usa TTBR0 para la traducción, ver TRM B3.5.5 <<<
+TTBR1 MMU_Get_TTBR1(void);
+void MMU_Set_TTBR1(TTBR1);
+
+// --- System Control Register ---
+SCTLR MMU_Get_SCTLR(void);
+void MMU_Set_SCTLR(SCTLR);
+
+// --- Domain Access Control Register ---
+DACR MMU_Get_DACR(void);
+void MMU_Set_DACR(DACR);
+
+
+// >>> Funciones operativas <<<
 void MMU_Enable_AccessFlag(ENABLEAF af);
 void MMU_Enable(MMUENABLE mmuenable);
 void MMU_Invalidate_TLB(void);
 
-
+uint32_t MMU_Get_FirstLevelTranslationTable_PhysicalAddress(void);
 void MMU_Set_FirstLevelTranslationTable_PhysicalAddress(uint32_t ph_addr);
 void MMU_MapNewPage(uint32_t address, uint32_t address2, uint8_t pageSize, uint8_t blockExecution, uint8_t memoryType, uint8_t memoryDescription, uint8_t pageShareable, uint8_t privilage);

@@ -15,11 +15,16 @@ __attribute__((section(".kernel"))) __attribute__((interrupt("swi"))) void swi_k
 
 }
 
-__attribute__((section(".kernel"))) __attribute__((interrupt("abort"))) void abort_kernel_handler(){
+__attribute__((section(".kernel"))) __attribute__((interrupt("abort"))) void pref_abort_kernel_handler(){
 
 }
 
-__attribute__((section(".kernel"))) void irq_kernel_handler(){
+__attribute__((section(".kernel"))) __attribute__((interrupt("abort"))) void data_abort_kernel_handler(){
+
+}
+
+// __attribute__((interrupt("irq"))) <- Esto no funciona (pone mal el PC con el LR).
+__attribute__((section(".kernel"))) __attribute__((interrupt("naked"))) void irq_kernel_handler(){
     _gicc_t* const GICC0 = (_gicc_t*)GICC0_ADDR;
     _timer_t* const TIMER0 = (_timer_t*)TIMER0_ADDR;
 
@@ -27,13 +32,15 @@ __attribute__((section(".kernel"))) void irq_kernel_handler(){
 
     switch(id){
         case 36:
-            GICC0->EOIR = id;           //Al escibir el interrupt id se da por finalizada la interrupción
-            TIMER0->Timer1IntClr = 1;   //Al escribir cualquier valor en el registro se limpia la interrupcion del contador
+            GICC0->EOIR = id;           //Esto da por finalizada la interrupción (WFI funca)
+            TIMER0->Timer1IntClr = 0x1; //Al escribir cualquier valor en el registro se limpia la interrupcion del contador
             break;
 
         default:
             break;
     } 
+    
+    return;
 } 
 
 __attribute__((section(".kernel"))) __attribute__((interrupt("fiq"))) void fiq_kernel_handler(){
