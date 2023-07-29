@@ -8,8 +8,6 @@
 /*--- Variables globales --- */
 .global _irq_enable
 .global _irq_disable
-.global _MMU_Enable
-.global _MMU_Disable
 .global _WRITE_8
 .global _WRITE_16
 .global _WRITE_32
