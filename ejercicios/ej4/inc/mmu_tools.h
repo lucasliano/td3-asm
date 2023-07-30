@@ -3,7 +3,7 @@
 // Defines para determinar valores de propiedades de los descriptores
 
 // Descriptor types
-#define INVALID 0b00
+#define INVALID_DESCRIPTOR 0b00
 #define PAGETABLE 0b01
 #define RESERVED 0b11
 #define SECTION 0b1
@@ -13,10 +13,13 @@
 // PAGE TABLES defines
 #define NS_SECURE 0b1
 #define NS_NONSECURE 0b0
+
 #define XN_BLOCKEXECUTION 0b1
 #define XN_ALLOWEXECUTION 0b0
+
 #define S_SHAREABLE 0b1
 #define S_NONSHAREABLE 0b0
+
 #define NG_GLOBAL 0b0
 #define NG_NOTGLOBAL 0b1
 
@@ -36,18 +39,14 @@ typedef enum {
  * 
  */
 typedef enum {
-    PL0,
-    PL1
+    NO_ACCESS,
+    PLX_R,
+    PL0_RW,
+    PL0_R,
+    PL1_RW,
+    PL1_R,
 } AP_PLX;
 
-/**
- * @brief Enum para determinar el acceso read-only o read-write a las páginas
- * 
- */
-typedef enum {
-    RW,
-    R
-} AP_RW;
 
 /**
  * @brief Enum para determinar si los descriptores usan o no el Access Flag
@@ -148,16 +147,6 @@ typedef enum {
     WA_NA
 } WRITEALLOC;
 
-/**
- * @brief Enum para ayudar al programador a configurar los descriptores de la MMU
- * 
- */
-typedef enum {
-    SECTION_DESC,
-    LARGEPAGE_DESC,
-    SMALLPAGE_DESC,
-    SUPERSECTION_DESC
-} DESCTYPE;
 
 /**
  * @brief Memory Model Feature Register 0
@@ -501,7 +490,8 @@ void MMU_Set_DACR(DACR);
 
 // >>> Funciones operativas <<<
 void MMU_Enable_AccessFlag(ENABLEAF af);
-void MMU_Enable(MMUENABLE mmuenable);
+void MMU_Enable();
+void MMU_Disable();
 void MMU_Invalidate_TLB(void);
 
 uint32_t MMU_Get_FirstLevelTranslationTable_PhysicalAddress(void);

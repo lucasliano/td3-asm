@@ -109,7 +109,7 @@ SECTIONS{
     } > ram /* FIXME: Nos excedimos de lo que declaramos como RAM y no dice nada */
     _systables_end = _SYSTABLES_PHY + _SYSTABLES_PHY_SIZE;
 
-    /* Estas son las tablas de la MMU */
+    /* Región dedicada a las tareas */
     . = _systables_end;
     . = ALIGN(0x10000);       /* NOTE: Lo hacemos para que nos quede alineado con 0x7005_0000 ahora*/
     _TASKS_PHY = .;

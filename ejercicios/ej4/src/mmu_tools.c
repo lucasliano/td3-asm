@@ -202,17 +202,28 @@ __attribute__((section(".text"))) void MMU_Enable_AccessFlag(ENABLEAF af)
     MMU_Set_SCTLR(sctlr);
 }
 
-__attribute__((section(".text"))) void MMU_Enable(MMUENABLE mmuenable)
+__attribute__((section(".text"))) void MMU_Enable()
 {
     /**
-    * @brief Esta función es un wrapper para habilitar o no el uso de la MMU
+    * @brief Esta función es un wrapper para habilitar el uso de la MMU
     * 
     */
     SCTLR sctlr = MMU_Get_SCTLR();
-
-    sctlr.M = mmuenable;
-
+    sctlr.M = MMUENABLE_YES;
     MMU_Set_SCTLR(sctlr);
+    asm("DSB");
+}
+
+__attribute__((section(".text"))) void MMU_Disable()
+{
+    /**
+    * @brief Esta función es un wrapper para deshabilitar el uso de la MMU
+    * 
+    */
+    SCTLR sctlr = MMU_Get_SCTLR();
+    sctlr.M = MMUENABLE_NO;
+    MMU_Set_SCTLR(sctlr);
+    asm("DSB");
 }
 
 __attribute__((section(".text"))) void MMU_Invalidate_TLB(void)
@@ -226,15 +237,3 @@ __attribute__((section(".text"))) void MMU_Invalidate_TLB(void)
     asm("MCR p15, 0, R0, c8, c7, 0"); // Invalidate entire UNIFIED TLB
 }
 
-__attribute__((section(".text"))) void MMU_MapNewPage(uint32_t address, uint32_t address2, uint8_t pageSize, uint8_t blockExecution, uint8_t memoryType, uint8_t memoryDescription, uint8_t pageShareable, uint8_t privilage)
-{
-    /**
-    * @brief Crea una nueva página a partir de investigar la tabla L1 y L2
-    * 
-    */
-    int a;
-
-
-
-    return;
-}
