@@ -1,7 +1,4 @@
-#include "../inc/gic.h"
-#include "../inc/timer.h"
-#include "../inc/mmu_tools.h"
-#include "../inc/asm_utils.h"
+#include "../inc/board_init.h"
 
 // --- Externs ---
 extern int _HARDWARE_REGISTERS_INIT;
@@ -17,39 +14,18 @@ extern int _SYSTABLES_END;
 extern int __bss_start__;
 extern int __bss_end__;
 
+extern int _SYSTABLES_PAGE_SIZE;
 
 
-// --- Funciones en este documento ---
-void preKernelInit();
-void configureGIC0();
-void configureTIMER0();
-void configureMMU();
-void paginateIdentityMapping(uint32_t phy_table_addr);
-void mapNewPage( uint32_t vmaAddr, uint32_t phyAddr, uint8_t pageSize, uint8_t blockExecution, uint8_t memoryType, uint8_t memoryDescription, uint8_t pageShareable, uint8_t privilage);
-
-void initFirstLevelTable(uint32_t* firstLevelBaseAddr);
-void initSecondLevelTable(uint32_t* SecondLevelBaseAddr);
-
+// NOTE: Solo para facilitar el debugging
 uint32_t globalDebug = 0;
-
 uint32_t vma_global = 0;
-
-
 uint32_t L1Index_global = 0;
 uint32_t L2Index_global = 0;
-
 uint32_t L1Phy_global = 0;
 uint32_t L2Phy_global = 0;
-
 uint32_t L1Descriptor_global = 0;
 uint32_t L2Descriptor_global = 0;
-
-uint32_t debug_global = 0;
-
-
-
-
-
 void debug()
 {
     asm("NOP");
@@ -230,44 +206,42 @@ void paginateIdentityMapping(uint32_t phy_table_addr)
 
     // === Comienza la creación de tablas ===
     // --- GIC ---
-    // TODO: Cambiar 0x1000 por _SYSTABLES_PAGE_SIZE
-
-    for (i = 0x0; i < 0 + (uint32_t)&_PUBLIC_GIC_SIZE; i+= 0x1000)
+    for (i = 0x0; i < 0 + (uint32_t)&_PUBLIC_GIC_SIZE; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
     }
 
-    for (i = (uint32_t)&_PUBLIC_EXCEPTION_VECTOR; i < (uint32_t)&_PUBLIC_EXCEPTION_VECTOR + (uint32_t)&_PUBLIC_GIC_SIZE; i+= 0x1000)
+    for (i = (uint32_t)&_PUBLIC_EXCEPTION_VECTOR; i < (uint32_t)&_PUBLIC_EXCEPTION_VECTOR + (uint32_t)&_PUBLIC_GIC_SIZE; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
     }
 
     // --- STACK ---
-    for (i = (uint32_t)&_PUBLIC_STACK_INIT; i < (uint32_t)&_PUBLIC_STACK_END; i+= 0x1000)
+    for (i = (uint32_t)&_PUBLIC_STACK_INIT; i < (uint32_t)&_PUBLIC_STACK_END; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
     }
 
-    for (i = (uint32_t)&_KERNEL_CODE_PHY; i < (uint32_t)&_KERNEL_CODE_PHY + ((uint32_t)&_PUBLIC_KERNEL_CODE_SIZE); i+= 0x1000)
+    for (i = (uint32_t)&_KERNEL_CODE_PHY; i < (uint32_t)&_KERNEL_CODE_PHY + ((uint32_t)&_PUBLIC_KERNEL_CODE_SIZE); i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
     }
 
     // --- Systables Code ---
-    for (i = (uint32_t)&_SYSTABLES_PHY; i < (uint32_t)&_SYSTABLES_END ; i+= 0x1000)
+    for (i = (uint32_t)&_SYSTABLES_PHY; i < (uint32_t)&_SYSTABLES_END ; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
     }
 
     // --- Hardware Registers ---
     // TIMER0_ADDR: 
-    for (i = (uint32_t)&_HARDWARE_REGISTERS_INIT; i < (uint32_t)&_HARDWARE_REGISTERS_END; i+= 0x1000)
+    for (i = (uint32_t)&_HARDWARE_REGISTERS_INIT; i < (uint32_t)&_HARDWARE_REGISTERS_END; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
     }
 
     // >>> Variables globales <<< :
-    for (i = (uint32_t)&__bss_start__; i < (uint32_t)&__bss_end__ ; i+= 0x1000)
+    for (i = (uint32_t)&__bss_start__; i < (uint32_t)&__bss_end__ ; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
     }
@@ -303,11 +277,6 @@ __attribute__((section(".text"))) void configureMMU(){
     sctlr.Z = 0;
     sctlr.AFE = AF_NO;
     MMU_Set_SCTLR(sctlr);
-
-    // Invalidamos la TLB, según documentación
-    // TODO: Validar que esto sea estrictamente necesario. Yo creo que solo sirve cuando se activa la MMU.
-    MMU_Invalidate_TLB();
-
 }
 
 __attribute__((section(".text"))) void preKernelInit(){
@@ -387,7 +356,7 @@ __attribute__((section(".text"))) void preKernelInit(){
     //------------------------------------------------------------------------------//
     // Cedemos control al kernel
     //------------------------------------------------------------------------------//
-    asm("B _main");
+    kernel_main();
 }
 
 

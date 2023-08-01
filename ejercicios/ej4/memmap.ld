@@ -48,8 +48,8 @@ _KERNEL_CODE_PHY = _PUBLIC_RAM_INIT; /* 0x70030000 */
 /* >>> Page Tables <<< */
 /* _SYSTABLES_PHY se define abajo */
 _KERNEL_MAX_TASKS = 16;
+_SYSTABLES_PAGE_SIZE = 0x1000;  /* 4KiB
 /* _KERNEL_MAX_PAGS_TASK = 48;  /* Cada tarea puede tener como máximo 48 páginas (contando identity mapping) */
-/*_SYSTABLES_PAGE_SIZE = 0x1000;  /* 4KiB */
 
 _SYSTABLES_PHY = 0x70050000;
 _SYSTABLES_PHY_SIZE = 0x00010000; /* Solamente vamos a ocupar 64KiB = 16KiB + (48 * 1KiB) */
