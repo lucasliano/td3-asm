@@ -4,6 +4,8 @@
 #include "../inc/asm_utils.h"
 
 // --- Externs ---
+extern int _HARDWARE_REGISTERS_INIT;
+extern int _HARDWARE_REGISTERS_END;
 extern int _PUBLIC_EXCEPTION_VECTOR;
 extern int _PUBLIC_GIC_SIZE;
 extern int _PUBLIC_STACK_INIT;
@@ -259,19 +261,7 @@ void paginateIdentityMapping(uint32_t phy_table_addr)
 
     // --- Hardware Registers ---
     // TIMER0_ADDR: 
-    for (i = (uint32_t)TIMER0_ADDR; i < (uint32_t)TIMER0_ADDR + 0x1000; i+= 0x1000)
-    {
-        mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
-    }
-
-    // GICC0_ADDR:
-    for (i = (uint32_t)GICC0_ADDR; i < (uint32_t)GICC0_ADDR + 0x1000; i+= 0x1000)
-    {
-        mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
-    }
-
-    // GICD0_ADDR:
-    for (i = (uint32_t)GICD0_ADDR; i < (uint32_t)GICD0_ADDR + 0x1000; i+= 0x1000)
+    for (i = (uint32_t)&_HARDWARE_REGISTERS_INIT; i < (uint32_t)&_HARDWARE_REGISTERS_END; i+= 0x1000)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
     }

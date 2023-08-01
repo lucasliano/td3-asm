@@ -66,7 +66,17 @@ _SYSTABLES_PHY_SIZE = 0x00010000; /* Solamente vamos a ocupar 64KiB = 16KiB + (4
     Definicion de las secciones
 */
 SECTIONS{
-    /* Arrancamos definiendo el código en ROM */
+
+    /* APB & AHB Hardware registers */
+    _HARDWARE_REGISTERS_INIT = 0x10000000;
+    .hardware _HARDWARE_REGISTERS_INIT :
+    {
+        /* Empty? */
+    }
+    _HARDWARE_REGISTERS_END = 0x20000000;
+
+
+    /* Código en ROM */
     .init _PUBLIC_ROM_INIT : 
     {
         *(.reset_vector_code*)
