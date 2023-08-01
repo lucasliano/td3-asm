@@ -7,11 +7,14 @@
 extern int _PUBLIC_EXCEPTION_VECTOR;
 extern int _PUBLIC_GIC_SIZE;
 extern int _PUBLIC_STACK_INIT;
-extern int _PUBLIC_STACK_SIZE;
+extern int _PUBLIC_STACK_END;
 extern int _KERNEL_CODE_PHY;
 extern int _PUBLIC_KERNEL_CODE_SIZE;
 extern int _SYSTABLES_PHY;
-extern int _SYSTABLES_PHY_SIZE;
+extern int _SYSTABLES_END;
+extern int __bss_start__;
+extern int __bss_end__;
+
 
 
 // --- Funciones en este documento ---
@@ -25,13 +28,29 @@ void mapNewPage( uint32_t vmaAddr, uint32_t phyAddr, uint8_t pageSize, uint8_t b
 void initFirstLevelTable(uint32_t* firstLevelBaseAddr);
 void initSecondLevelTable(uint32_t* SecondLevelBaseAddr);
 
-uint32_t globalVariable = 0;
+uint32_t globalDebug = 0;
+
+uint32_t vma_global = 0;
+
+
+uint32_t L1Index_global = 0;
+uint32_t L2Index_global = 0;
+
+uint32_t L1Phy_global = 0;
+uint32_t L2Phy_global = 0;
+
+uint32_t L1Descriptor_global = 0;
+uint32_t L2Descriptor_global = 0;
+
+uint32_t debug_global = 0;
+
+
+
+
+
 void debug()
 {
-    // uint32_t a = 0;
     asm("NOP");
-    globalVariable += 1;
-    // a = globalVariable;
 }
 
 
@@ -69,10 +88,12 @@ void initSecondLevelTable(uint32_t* SecondLevelBaseAddr)
 uint32_t getNewSecondLevelAddress()
 {
     // Tiene que ser múltiplo de 1KiB = 0x400
-    static uint32_t address = 0x70055000 - 0x400;  // La primera que retorna va a ser 0x70055000
+    static uint32_t address = (uint32_t)&_SYSTABLES_PHY + 0x4000 - 0x400;  // La primera que retorna va a ser 0x70055000
     address += 0x400;
+    initSecondLevelTable((uint32_t*) address);
 
-    debug();
+    globalDebug = address;
+    
     return address;
 }
 
@@ -94,12 +115,7 @@ void mapNewSmallPage(
     // Saco la base de TTBR0
     //------------------------------------------------------------------------------//
     L1BaseAddr = (uint32_t*) MMU_Get_FirstLevelTranslationTable_PhysicalAddress();
-    if ((*L1BaseAddr & 0b11) != PAGETABLE)
-    {
-        initFirstLevelTable(L1BaseAddr);  // Si no es una página de tablas es porque nunca se mappeo la 0x0.
-                                // La 0x0 es la primer página que se debe inicializar.
-    }
-
+    
     //------------------------------------------------------------------------------//
     // Extraigo los indices de L1/L2 y el offset de la VMA
     //------------------------------------------------------------------------------//
@@ -131,7 +147,7 @@ void mapNewSmallPage(
         
     }else{
         // Si existe desacriptor en la L1, sacamos la posición de la L2
-        L2BaseAddr = (uint32_t*) (firstLevelDescriptor.PAGETABLE_BASE_ADDRESS << 22);
+        L2BaseAddr = (uint32_t*) (firstLevelDescriptor.descriptor & 0xFFFFFC00);        
     }
 
     //------------------------------------------------------------------------------//
@@ -179,10 +195,20 @@ void mapNewSmallPage(
     }
 
     // Base Addr
-    secondLevelDescriptor.descriptor = ((uint32_t) phyAddr & 0xFFFFF000) | secondLevelDescriptor.descriptor;
+    secondLevelDescriptor.descriptor = ((uint32_t) phyAddr & 0xFFFFF000) | (secondLevelDescriptor.descriptor & 0xFFF);
 
     // Guardamos el descriptor en la tabla
     L2BaseAddr[L2Index] = (uint32_t) secondLevelDescriptor.descriptor;
+
+    // FIXME: Remove, just for debug
+    vma_global = vmaAddr;
+    L1Index_global = L1Index;
+    L2Index_global = L2Index;
+    L1Phy_global =  ((uint32_t) L1BaseAddr + (L1Index*4));
+    L2Phy_global =  ((uint32_t) L2BaseAddr + (L2Index*4));
+    L1Descriptor_global = (uint32_t) (firstLevelDescriptor.descriptor);
+    L2Descriptor_global = (uint32_t) (secondLevelDescriptor.descriptor);
+
     return;
 }
 
@@ -197,9 +223,13 @@ void paginateIdentityMapping(uint32_t phy_table_addr)
 
     // Setteo la TTBR0
     MMU_Set_FirstLevelTranslationTable_PhysicalAddress((uint32_t)&_SYSTABLES_PHY);
+    initFirstLevelTable((uint32_t* )&_SYSTABLES_PHY);    // Limpio la región de memoria donde va la L1
+
 
     // === Comienza la creación de tablas ===
     // --- GIC ---
+    // TODO: Cambiar 0x1000 por _SYSTABLES_PAGE_SIZE
+
     for (i = 0x0; i < 0 + (uint32_t)&_PUBLIC_GIC_SIZE; i+= 0x1000)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
@@ -211,19 +241,43 @@ void paginateIdentityMapping(uint32_t phy_table_addr)
     }
 
     // --- STACK ---
-    for (i = (uint32_t)&_PUBLIC_STACK_INIT; i < (uint32_t)&_PUBLIC_STACK_INIT + ((uint32_t)&_PUBLIC_STACK_SIZE * 6); i+= 0x1000)
+    for (i = (uint32_t)&_PUBLIC_STACK_INIT; i < (uint32_t)&_PUBLIC_STACK_END; i+= 0x1000)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
     }
 
-    // --- Kernel Code ---
     for (i = (uint32_t)&_KERNEL_CODE_PHY; i < (uint32_t)&_KERNEL_CODE_PHY + ((uint32_t)&_PUBLIC_KERNEL_CODE_SIZE); i+= 0x1000)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
     }
 
     // --- Systables Code ---
-    for (i = (uint32_t)&_SYSTABLES_PHY; i < (uint32_t)&_SYSTABLES_PHY + ((uint32_t)&_SYSTABLES_PHY_SIZE); i+= 0x1000)
+    for (i = (uint32_t)&_SYSTABLES_PHY; i < (uint32_t)&_SYSTABLES_END ; i+= 0x1000)
+    {
+        mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
+    }
+
+    // --- Hardware Registers ---
+    // TIMER0_ADDR: 
+    for (i = (uint32_t)TIMER0_ADDR; i < (uint32_t)TIMER0_ADDR + 0x1000; i+= 0x1000)
+    {
+        mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
+    }
+
+    // GICC0_ADDR:
+    for (i = (uint32_t)GICC0_ADDR; i < (uint32_t)GICC0_ADDR + 0x1000; i+= 0x1000)
+    {
+        mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
+    }
+
+    // GICD0_ADDR:
+    for (i = (uint32_t)GICD0_ADDR; i < (uint32_t)GICD0_ADDR + 0x1000; i+= 0x1000)
+    {
+        mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
+    }
+
+    // >>> Variables globales <<< :
+    for (i = (uint32_t)&__bss_start__; i < (uint32_t)&__bss_end__ ; i+= 0x1000)
     {
         mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
     }
@@ -325,7 +379,6 @@ __attribute__((section(".text"))) void preKernelInit(){
     // Paginación esencial para todos
     //------------------------------------------------------------------------------//
     paginateIdentityMapping((uint32_t)&_SYSTABLES_PHY);
-    _irq_enable();
 
     //------------------------------------------------------------------------------//
     // Activamos la MMU
@@ -338,7 +391,7 @@ __attribute__((section(".text"))) void preKernelInit(){
     //------------------------------------------------------------------------------//
     // Habilitamos las interrupciones
     //------------------------------------------------------------------------------//
-    // _irq_enable();
+    _irq_enable();
 
     
     //------------------------------------------------------------------------------//

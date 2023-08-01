@@ -17,7 +17,7 @@ MEMORY
 {
     gic      : org = _PUBLIC_GIC, len = 0x1000
     rom      : org = _PUBLIC_ROM_INIT, len = 0x1000 /* 0x2c000 */
-    ram      : org = _PUBLIC_RAM_INIT, len = 0x1000 /* 0x40000000 */
+    ram      : org = _PUBLIC_RAM_INIT, len = 0x2000 /* 0x40000000 */
 }
 
 
@@ -32,7 +32,7 @@ _PUBLIC_EXCEPTION_VECTOR = _PUBLIC_GIC;
 /* TODO:    En realidad el stack va a ser distinto para cada tarea  */
 /*          pero para poder trabajar vamos a necesitar algun stack  */
 _PUBLIC_STACK_INIT = 0x70020000;
-_PUBLIC_STACK_SIZE = 256; /* Termina en 0x700200FF */
+_PUBLIC_STACK_SIZE = 512; /* Termina en 0x700201FF */
 _FIQ_STACK_TOP = _PUBLIC_STACK_INIT + _PUBLIC_STACK_SIZE; /* Ej: SP_FIQ = 0x70020100 */
 _IRQ_STACK_TOP = _FIQ_STACK_TOP + _PUBLIC_STACK_SIZE;
 _SVC_STACK_TOP = _IRQ_STACK_TOP + _PUBLIC_STACK_SIZE;
@@ -47,20 +47,19 @@ _KERNEL_CODE_PHY = _PUBLIC_RAM_INIT; /* 0x70030000 */
 
 /* >>> Page Tables <<< */
 /* _SYSTABLES_PHY se define abajo */
-_SYSTABLES_PAGE_SIZE = 0x1000;  /* 4KiB */
 _KERNEL_MAX_TASKS = 16;
-_KERNEL_MAX_PAGS_TASK = 64;  /* Cada tarea puede tener como máximo 64*4kB = 256kB de ram */
+/* _KERNEL_MAX_PAGS_TASK = 48;  /* Cada tarea puede tener como máximo 48 páginas (contando identity mapping) */
+/*_SYSTABLES_PAGE_SIZE = 0x1000;  /* 4KiB */
 
-/* FIXME: Esto en realidad no va a ser así.. hay que recalcularlo */
-_SYSTABLES_PHY_SIZE = 0x10000; /* Suponemos inicialmente que solamente vamos a ocupar 64KiB = 16KiB + (48 * 1KiB) */
-
+_SYSTABLES_PHY = 0x70050000;
+_SYSTABLES_PHY_SIZE = 0x00010000; /* Solamente vamos a ocupar 64KiB = 16KiB + (48 * 1KiB) */
 
 /* >>> Task memory region <<< */
 /* _TASKS_PHY se define abajo */
-_TASKS_VMA = 0x10000000;
+/* _TASKS_VMA = 0x10000000; */
 
 /* FIXME: Calcular esto también */
-_TASKS_PHY_SIZE = 0x10000; /* 0x400000 = _KERNEL_MAX_TASKS * _KERNEL_MAX_PAGS_TASK * _SYSTABLES_PAGE_SIZE */
+/* _TASKS_PHY_SIZE = 0x10000; /* 0x400000 = _KERNEL_MAX_TASKS * _KERNEL_MAX_PAGS_TASK * _SYSTABLES_PAGE_SIZE */
 
 
 /*
@@ -89,7 +88,8 @@ SECTIONS{
     {
         /* Preguntamos si el stack size alcanza */
         ASSERT ((_SYS_STACK_TOP > (_rom_end + _PUBLIC_STACK_SIZE * 6)), "Error: No room left for the stack");
-    } > ram /* FIXME: Ver que esto no está funcionando porque 0x70020000 no está en RAM
+    } > ram /* FIXME: Ver que esto no está funcionando porque 0x70020000 no está en RAM */
+    _PUBLIC_STACK_END = _SYS_STACK_TOP;
 
     /* Esto es el código que va en el KERNEL. Tiene VMA != LMA */
     _PUBLIC_KERNEL_LMA_INIT = LOADADDR(.gic_vector) + SIZEOF(.gic_vector);
@@ -101,23 +101,22 @@ SECTIONS{
     } > ram
     _PUBLIC_KERNEL_CODE_SIZE = SIZEOF(.kernel);
 
-    /* Estas son las tablas de la MMU */
-    _SYSTABLES_PHY = ALIGN(0x40000);
+    /* Estas son las tablas de la MMU - 0x7005_0000*/
     .systables _SYSTABLES_PHY :
     {
         /* Empty? */
     } > ram /* FIXME: Nos excedimos de lo que declaramos como RAM y no dice nada */
-    _systables_end = _SYSTABLES_PHY + _SYSTABLES_PHY_SIZE;
+    _SYSTABLES_END = _SYSTABLES_PHY + _SYSTABLES_PHY_SIZE;
 
     /* Región dedicada a las tareas */
-    . = _systables_end;
-    . = ALIGN(0x10000);       /* NOTE: Lo hacemos para que nos quede alineado con 0x7005_0000 ahora*/
-    _TASKS_PHY = .;
-    .tasks _TASKS_PHY :
-    {
-        /* Empty? */
-    } > ram /* FIXME: Nos excedimos de lo que declaramos como RAM y no dice nada */
-    _tasks_end = _TASKS_PHY + _TASKS_PHY_SIZE;
+    /* . = _systables_end; */
+    /* . = ALIGN(0x10000);       /* NOTE: Lo hacemos para que nos quede alineado con 0x7005_0000 ahora*/
+    /* _TASKS_PHY = .; */
+    /* .tasks _TASKS_PHY : */
+    /* { */
+    /*     /* Empty? */
+    /* } > ram /* FIXME: Nos excedimos de lo que declaramos como RAM y no dice nada */
+    /* _tasks_end = _TASKS_PHY + _TASKS_PHY_SIZE; */
     
 
     .data : {               /*Datos*/
