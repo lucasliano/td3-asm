@@ -14,7 +14,7 @@ ROOT_NAME = ${notdir ${shell pwd}}
 # Configs
 CHAIN=arm-none-eabi
 CFLAGS=-g -std=gnu99 -Wall -mcpu=cortex-a8 -MD -I${INC}
-ASFLAGS=-g
+ASFLAGS=-g -I${INC}
 LDFLAGS=-g --orphan-handling=discard -T
 
 # Folders
