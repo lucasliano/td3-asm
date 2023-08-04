@@ -234,11 +234,19 @@ void paginateIdentityMapping(uint32_t phy_table_addr)
     }
 
     // --- Hardware Registers ---
-    // TIMER0_ADDR: 
-    for (i = (uint32_t)&_HARDWARE_REGISTERS_INIT; i < (uint32_t)&_HARDWARE_REGISTERS_END; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
-    {
-        mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
-    }
+    // NOTE: La manera correcta sería mappear todo el bus APB y AHB.
+    //       Haciendo esto tendríamos acceso a todos los posibles registros.
+    //       Pero eso sería mappear desde 0x1000_0000 hasta 0x2000_0000
+    //       que es equivalente a 256 tablas L2.  
+    // for (i = (uint32_t)&_HARDWARE_REGISTERS_INIT; i < (uint32_t)&_HARDWARE_REGISTERS_END; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
+    // {
+    //     mapNewSmallPage(i, i, XN_ALLOWEXECUTION, PL1_RW);
+    // }
+
+    // NOTE: Para evitar esto solo vamos a mappear los registros que utilizamos
+    //       Lo que nos va a ocupar solo 2 páginas
+    mapNewSmallPage(TIMER0_ADDR, TIMER0_ADDR, XN_ALLOWEXECUTION, PL1_RW);   // 0x100-_----
+    mapNewSmallPage(GICC0_ADDR, GICC0_ADDR, XN_ALLOWEXECUTION, PL1_RW);     // 0x1E0-_----
 
     // >>> Variables globales <<< :
     for (i = (uint32_t)&__bss_start__; i < (uint32_t)&__bss_end__ ; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
