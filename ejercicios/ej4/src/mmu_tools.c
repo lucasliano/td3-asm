@@ -163,7 +163,7 @@ __attribute__((section(".text"))) uint32_t MMU_Get_FirstLevelTranslationTable_Ph
 
     if(tt_size == 0)
     {
-        // Solamente se usa TTBR0 para la traducción, ver TRM B3.5.5
+        // Solamente se usa TTBR0 para la traducción, ver TRM B3.5.4
         tt_ph_addr = ttbr0.ttbr0 & 0xFFFFC000;
     }
 
