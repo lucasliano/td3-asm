@@ -48,18 +48,18 @@ _KERNEL_CODE_PHY = _PUBLIC_RAM_INIT; /* 0x70030000 */
 /* >>> Page Tables <<< */
 /* _SYSTABLES_PHY se define abajo */
 _KERNEL_MAX_TASKS = 16;
-_SYSTABLES_PAGE_SIZE = 0x1000;  /* 4KiB
-/* _KERNEL_MAX_PAGS_TASK = 48;  /* Cada tarea puede tener como máximo 48 páginas (contando identity mapping) */
+_SYSTABLES_PAGE_SIZE = 0x1000;  /* 4KiB */
+_SYSTABLES_MAX_L2 = 4; /* Cantidad de tablas L2 por tarea */
 
 _SYSTABLES_PHY = 0x70050000;
-_SYSTABLES_PHY_SIZE = 0x00010000; /* Solamente vamos a ocupar 64KiB = 16KiB + (48 * 1KiB) */
+/* _SYSTABLES_PHY_SIZE = 0x00010000; /* Solamente vamos a ocupar 64KiB = 16KiB + (48 * 1KiB) */
+_SYSTABLES_PHY_SIZE = 0x1000 + (_SYSTABLES_MAX_L2 * 0x400); /* 20KiB (0x2000) = 16KiB + (4 * 1KiB) */
 
 /* >>> Task memory region <<< */
-/* _TASKS_PHY se define abajo */
-/* _TASKS_VMA = 0x10000000; */
-
-/* FIXME: Calcular esto también */
-/* _TASKS_PHY_SIZE = 0x10000; /* 0x400000 = _KERNEL_MAX_TASKS * _KERNEL_MAX_PAGS_TASK * _SYSTABLES_PAGE_SIZE */
+_TASKS_VMA = 0x80000000;
+_TASKS_PHY = 0x71000000;
+_TASK_MAX_PAGES = _SYSTABLES_MAX_L2 * 256; /* Cada tarea puede tener como máximo 4 tablas L2 (contando identity mapping) */
+_TASK_PHY_SIZE = _TASK_MAX_PAGES * _SYSTABLES_PAGE_SIZE; /* 0x100_0000 = _TASK_MAX_PAGES * _SYSTABLES_PAGE_SIZE
 
 
 /*
@@ -105,29 +105,19 @@ SECTIONS{
     _PUBLIC_KERNEL_LMA_INIT = LOADADDR(.gic_vector) + SIZEOF(.gic_vector);
     .kernel _KERNEL_CODE_PHY : AT (_PUBLIC_KERNEL_LMA_INIT) 
     {
+        *(.debug*)       /* TODO: Remove */
         *(.handlers*)
         *(.text*)
         *(.kernel*)
     } > ram
     _PUBLIC_KERNEL_CODE_SIZE = SIZEOF(.kernel);
 
-    /* Estas son las tablas de la MMU - 0x7005_0000*/
+    /* Estas son las tablas de la MMU para el kernel - 0x7005_0000*/
     .systables _SYSTABLES_PHY :
     {
         /* Empty? */
     } > ram /* FIXME: Nos excedimos de lo que declaramos como RAM y no dice nada */
     _SYSTABLES_END = _SYSTABLES_PHY + _SYSTABLES_PHY_SIZE;
-
-    /* Región dedicada a las tareas */
-    /* . = _systables_end; */
-    /* . = ALIGN(0x10000);       /* NOTE: Lo hacemos para que nos quede alineado con 0x7005_0000 ahora*/
-    /* _TASKS_PHY = .; */
-    /* .tasks _TASKS_PHY : */
-    /* { */
-    /*     /* Empty? */
-    /* } > ram /* FIXME: Nos excedimos de lo que declaramos como RAM y no dice nada */
-    /* _tasks_end = _TASKS_PHY + _TASKS_PHY_SIZE; */
-    
 
     .data : {               /*Datos*/
         . = ALIGN(4);       /*Salta a la proxima direccion alineada a 4*/
@@ -142,5 +132,35 @@ SECTIONS{
         *(.bss*)
         __bss_end__ = .;
     } > ram 
+
+
+    /* Región dedicada a las tareas - 0x7006_0000*/
+    /* .tasks _TASKS_PHY :  */
+    /* {  */
+    /* /* Empty? */
+    /* } > ram /* FIXME: Nos excedimos de lo que declaramos como RAM y no dice nada */
+    /* _tasks_end = _TASKS_PHY + _TASK_PHY_SIZE;  */
+    
+    _TASK1_LMA = LOADADDR(.bss) + SIZEOF(.bss);
+    .task1 0x80000000 : AT (_TASK1_LMA)
+    { 
+        *(.task1)
+    }
+    _task1_size = SIZEOF(.task1); 
+
+    _TASK2_LMA = LOADADDR(.task1) + SIZEOF(.task1);
+    .task2 0x80000000 : AT (_TASK2_LMA)
+    { 
+        *(.task2)
+    }
+    _task2_size = SIZEOF(.task2);  
+
+    _TASK3_LMA = LOADADDR(.task2) + SIZEOF(.task2);
+    .task3 0x80000000 : AT (_TASK3_LMA)
+    { 
+        *(.task3)
+    }
+    _task3_size = SIZEOF(.task3); 
+    
 }
 

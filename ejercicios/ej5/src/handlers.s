@@ -45,6 +45,10 @@ _SVC_handler:
     MRS   R8, SPSR            //Se copia el contenido de SPSR a R8
     PUSH {R7, R8}             //Se guardan en la pila el valor de R7 y R8
 
+    @ NOTE: Revisar esto. BIC es bit clear, te limpia los bits del opcode
+    ldr r0, [lr, #-4]           @ guardo instruccion "svc" en r0 (la anterior a la addr de lr)
+    bic r0,r0,#0xFF000000       @ obtengo numero de svc.
+
     BL swi_kernel_handler
 
     POP  {R7, R8}              //Guardo en R7 y R8 los valores del SPSR y SP
@@ -81,7 +85,7 @@ _ABT_handler:
 _IRQ_handler:
     @ Deshabilito las IRQ y las FIQ hasta terminar de atender esta interrupción
     @ MSR cpsr_c, (1 << I_BIT) | (0 << F_BIT) | (0 << T_BIT) | (IRQ_MODE) 
-    @ TODO: Ver dónde debería volverse a activar la IRQ.       
+    @ TODO: Ver dónde debería volverse a activar la IRQ.  
 
     @ Corrijo la posición del link register.
     SUB   LR, LR, #4            @ Esto es porque tengo que volver a la instrucción que sigue a la de mi PC. 
@@ -96,6 +100,7 @@ _IRQ_handler:
                                 @ PUSH es equivalente a esta instrucción.
     
     @ TODO: Preguntar si esto es para interrupciones anidadas
+    @ FRAME POINTER - Sirve para tener una fotod el SP al principio de la función.
     MOV   R7, SP                @ Se copia el contenido de SP a R7.
     MRS   R8, SPSR              @ Se copia el contenido de SPSR a R8. Usamos MRS porque SPSR es un registro del sistema.
     PUSH {R7, R8}               @ Se guardan en la pila el valor de R7 y R8.
@@ -109,7 +114,9 @@ _IRQ_handler:
     @ TODO: Lo mismo acá.. Esto debería ser para interrupciones anidadas
     POP  {R7, R8}              @ Guardo en R7 y R8 los valores del SPSR y SP.
     MOV   SP, R7               @ Pongo el contenido de R7 (SP anterior) al SP actual.
-    @ TODO: ¿Por qué no se utiliza el R8 (que almacenó el SPSR)?
+
+
+    @ TODO: ¿Por qué no se utiliza el R8 (que almacenó el SPSR)? <- ¿Hay que meterle un ^ al POP?
     LDMFD SP!, { R0-R12, PC }^ @ Carga de R0 a R12 y el PC desde la pila utilizando SP como base. El ^ hace que se cargue el CPSR desde el SPSR directamente.
 
 

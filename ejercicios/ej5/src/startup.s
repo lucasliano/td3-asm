@@ -3,7 +3,7 @@
 .global _start              @ Indica al linker donde arranca el codigo
 
 /*--- Variables importadas --- */
-.extern memcopy
+.extern rom_memcopy
 .extern preKernelInit
 
 /*--- Definiciones --- */
@@ -20,13 +20,13 @@ _start:
     LDR R0, = _PUBLIC_GIC_VECTOR_LMA_INIT
     LDR R1, = _PUBLIC_EXCEPTION_VECTOR 
     LDR R2, = _PUBLIC_GIC_SIZE
-    BL memcopy
+    BL rom_memcopy
 
     @ Inicio copio el kernel a la RAM
     LDR R0, = _PUBLIC_KERNEL_LMA_INIT   @ Origen
     LDR R1, = _KERNEL_CODE_PHY          @ Destino
     LDR R2, = _PUBLIC_KERNEL_CODE_SIZE  @ Cant Bytes
-    BL memcopy
+    BL rom_memcopy
     @ >>> Hasta acá el código no puede tener excepciones <<<
     @ >>> De ahora en adelante el código corre en RAM <<<
 

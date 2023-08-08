@@ -36,7 +36,7 @@ dashboard memory watch 0x70054c00 4
 dashboard memory watch 0x70054c04 4
 
 
-
+dashboard memory watch 0x71000ff0 16
 
 # TASKS
 # dashboard memory watch 0x70050000 96
