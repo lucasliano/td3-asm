@@ -92,29 +92,24 @@ _IRQ_handler:
                                 @ O sea el PC esta en +8 por el pipeline, y quiero ir a una más, entonces resto 4.
 
     @ Algun comportamiento que necesito tener entre llamadas de IRQs:
-    ADD   R10, R10, #1          @ R10 va a contiene la cantidad de veces que se entro en IRQ.
+    @ADD   R10, R10, #1          @ R10 va a contiene la cantidad de veces que se entro en IRQ.
     
 
     @ Salvamos registros importantes:
     STMFD SP!, { R0-R12, LR }   @ Guarda de R0 a R12 y LR en la pila, usando SP como base y decrementando automáticamente su valor.
                                 @ PUSH es equivalente a esta instrucción.
     
-    @ TODO: Preguntar si esto es para interrupciones anidadas
-    @ FRAME POINTER - Sirve para tener una fotod el SP al principio de la función.
-    MOV   R7, SP                @ Se copia el contenido de SP a R7.
     MRS   R8, SPSR              @ Se copia el contenido de SPSR a R8. Usamos MRS porque SPSR es un registro del sistema.
-    PUSH {R7, R8}               @ Se guardan en la pila el valor de R7 y R8.
+    PUSH {R8}                   @ Se guardan en la pila el valor de SPSR.
 
     @ Branch al handler del kernel en C:
     BL    irq_kernel_handler    @ Llamo al handler de irq.
     
-    ADD   R9, R9, #2            @ Nótese que esto no se almacena en ningún lugar porque no se hace STR/PUSH en ningun momento.
+    @ADD   R9, R9, #2            @ Nótese que esto no se almacena en ningún lugar porque no se hace STR/PUSH en ningun momento.
 
 
-    @ TODO: Lo mismo acá.. Esto debería ser para interrupciones anidadas
-    POP  {R7, R8}              @ Guardo en R7 y R8 los valores del SPSR y SP.
-    MOV   SP, R7               @ Pongo el contenido de R7 (SP anterior) al SP actual.
-
+    POP  {R8}                   @ Guardo en R7 y R8 los valores del SPSR y SP.
+    MSR  SPSR, R8               @ Recupero el valor del SPSR
 
     @ TODO: ¿Por qué no se utiliza el R8 (que almacenó el SPSR)? <- ¿Hay que meterle un ^ al POP?
     LDMFD SP!, { R0-R12, PC }^ @ Carga de R0 a R12 y el PC desde la pila utilizando SP como base. El ^ hace que se cargue el CPSR desde el SPSR directamente.

@@ -12,3 +12,4 @@
 .equ ABT_MODE, 0b10111 @ mode = 0x17
 .equ UND_MODE, 0b11011 @ mode = 0x1B
 .equ SYS_MODE, 0b11111 @ mode = 0x1F
+.equ USR_MODE, 0b10000 @ mode = 0x10

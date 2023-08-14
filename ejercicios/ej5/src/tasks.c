@@ -40,11 +40,21 @@ __attribute__((section(".task2"))) __attribute__((naked)) void task2(){
     }
 }
 
-__attribute__((section(".task3"))) __attribute__((naked)) void task3(){
+__attribute__((section(".task3"))) __attribute__((naked)) void kernelBackground(void)
+{   
+    // Esta es una tarea que debería ejecutar algúna tarea de housekeeping
+    
+    // NOTE: Esta línea genera un data abort
+    // uint32_t myvar = *((uint32_t*) 0x80000000); 
+
+    // NOTE: Esta línea genera un prefetch abort
+    // asm("B 0x80000000");    
+
 
     while(1)
     {
         asm("WFI");
-        contador3++;
     }
+
+    return; // Should never get here
 }

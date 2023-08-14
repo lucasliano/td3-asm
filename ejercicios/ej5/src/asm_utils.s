@@ -14,6 +14,7 @@
 .global _READ_8
 .global _READ_16
 .global _READ_32
+.global _load_sp
 
 /*--- Variables importadas --- */
 
@@ -101,4 +102,8 @@ _READ_16:
 
 _READ_32:
     LDR R0, [R0]
+    BX LR
+
+_load_sp:
+    MOV SP, R0
     BX LR

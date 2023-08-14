@@ -1,7 +1,9 @@
+#ifndef __TIMER_LIB_H
+#define __TIMER_LIB_H
 
 #include <stddef.h>
 #include <stdint.h>
-#include "macros.h"
+#include "asm_utils.h"
 
 
 #define TIMER0_ADDR 0x10011000
@@ -33,3 +35,4 @@ typedef volatile struct {
   uint32_t  PCellID[ 4 ];    
 } _timer_t;
 
+#endif // __TIMER_LIB_H

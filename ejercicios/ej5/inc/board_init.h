@@ -10,7 +10,7 @@
 
 
 // Definición de funciones
-void preKernelInit(void);
+void hardwareInit(void);
 void configureGIC0(void);
 void configureTIMER0(void);
 void configureMMU(void);

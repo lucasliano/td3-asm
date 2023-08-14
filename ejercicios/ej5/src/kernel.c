@@ -1,23 +1,39 @@
 #include "../inc/kernel.h"
 #include "../inc/tasks.h"
-#include "../inc/board_init.h"
+
 #include "../inc/debug.h"
 
-// Global Variables
+// --- Externs ---
 extern int _KERNEL_MAX_TASKS;
 extern int _TASKS_PHY;
 extern int _TASKS_PHY_SIZE;
 extern int _SYSTABLES_PHY;
 extern int _SYSTABLES_PHY_SIZE;
-extern int _PUBLIC_STACK_SIZE;
+extern int _STACK_SIZE;
 
+extern int _SYSTABLES_PAGE_SIZE;
+
+// --- ROM de las tareas ---
+extern int _TASK1_LMA;
+extern int _task1_size;
+extern int _TASK2_LMA;
+extern int _task2_size;
+extern int _TASK3_LMA;
+extern int _task3_size;
+
+
+// --- Global Variables ---
 TCB_t taskVector[16];
 
+// |  Region |  Offset |          Size         |   hex(Size)   |
+// |---------|---------|-----------------------|---------------|
+// |  Tables |   0x0   |         64 kiB        |  0x0001_0000  |
+// |  Stacks | 0x10000 | 60 KiB (sobran 4 KiB) |  0x0000_fffc  |
+// |   Code  | 0x20000 |         15 MiB        |  0x00fe_0000  |
 
 
 
-
-__attribute__((section(".kernel"))) void memcopy(const void *origen, void *destino, unsigned int num_bytes)
+void memcopy(const void *origen, void *destino, unsigned int num_bytes)
 {
     int* source  = (int*) origen;
     int* dest = (int*) destino;
@@ -37,32 +53,40 @@ void initScheduler (void)
     TCB_t emptyTask;
 
     uint32_t taskBasePhy, taskBaseStackPhy, taskBaseCodePhy;
+    uint32_t taskBaseStackVMA;
     
     // Configuración igual para todas las tareas
-    emptyTask.ticks = 10;
+    emptyTask.ticks = 0;
     emptyTask.isActive = 0;
+    emptyTask.L2TablesCount = 0;
+    emptyTask.privilege = USR;
+
 
     for (i = 0; i < 16; i++)//(uint32_t) &_KERNEL_MAX_TASKS; i++)
     {
-        // FIXME: Generalizar!
-        taskBasePhy = 0x71000000 + (i * 0x00100000); //(uint32_t) &_TASKS_PHY +  (i * (uint32_t) &_TASKS_PHY_SIZE);
+        //  NOTE: Cada tarea puede paginar más de su tamaño en memoria.
+        taskBasePhy = (uint32_t) &_TASKS_PHY +  (i * (uint32_t) &_TASKS_PHY_SIZE); //0x71000000 + (i * 0x00100000);
         
-        emptyTask.PID = i;
-        emptyTask.TTBR0 = 0x71000000 + (i * 0x00100000); //(uint32_t) &_SYSTABLES_PHY +  (i * (uint32_t) &_SYSTABLES_PHY_SIZE);
+        emptyTask.PID = i + 1; // La tarea 5 tiene PID 1
+        emptyTask.TTBR0 = taskBasePhy;
         
         
-        // NOTE: taskBaseStackVma = 0x6000_0000
-        taskBaseStackPhy = taskBasePhy + 0x10000; // TODO: _SYSTABLES_PHY_SIZE
+        taskBaseStackPhy = taskBasePhy + (uint32_t) &_SYSTABLES_PHY_SIZE; // 0x10000
+        emptyTask.taskBaseStackPhy = taskBaseStackPhy;
 
-        emptyTask.SP_FIQ = taskBaseStackPhy + 1 * 512; // TODO: _PUBLIC_STACK_SIZE
-        emptyTask.SP_IRQ = taskBaseStackPhy + 2 * 512;
-        emptyTask.SP_SVC = taskBaseStackPhy + 3 * 512;
-        emptyTask.SP_ABT = taskBaseStackPhy + 4 * 512;
-        emptyTask.SP_UND = taskBaseStackPhy + 5 * 512;
-        emptyTask.SP_SYS = taskBaseStackPhy + 6 * 512;
-        emptyTask.SP_USR = taskBaseStackPhy + 7 * 512;
 
-        taskBaseCodePhy = taskBasePhy + 0x20000;
+        taskBaseStackVMA = 0x60000000; // Pongo la VMA
+
+        emptyTask.SP_FIQ = taskBaseStackVMA + (1 * (uint32_t) &_STACK_SIZE);
+        emptyTask.SP_IRQ = taskBaseStackVMA + (2 * (uint32_t) &_STACK_SIZE) - 15*4; // Tenemos en consideración el preload {r0-r12,pc,spsr}
+        emptyTask.SP_SVC = taskBaseStackVMA + (3 * (uint32_t) &_STACK_SIZE);
+        emptyTask.SP_ABT = taskBaseStackVMA + (4 * (uint32_t) &_STACK_SIZE);
+        emptyTask.SP_UND = taskBaseStackVMA + (5 * (uint32_t) &_STACK_SIZE);
+        emptyTask.SP_SYS = taskBaseStackVMA + (6 * (uint32_t) &_STACK_SIZE);
+
+
+        // NOTE: _STACK_SIZE * 6 < 0x10000
+        taskBaseCodePhy = taskBaseStackPhy + 0x10000;
         emptyTask.taskCodeBasePhy = taskBaseCodePhy; // Posición a partir de la cual puede estar el código;
 
         taskVector[i] = emptyTask;
@@ -70,201 +94,200 @@ void initScheduler (void)
 
 }
 
-int32_t getFreePID(void)
+uint32_t getFreePID(void)
 {
-    uint32_t i = 0;
+    uint32_t i;
     
     for (i = 0; i < 16 ; i++)
     {
         if (!taskVector[i].isActive)
-            return (int32_t) taskVector[i].PID;
+            return taskVector[i].PID;
     }
 
-    return -1;
+    return 0;
 }
 
-void preloadStack(uint32_t pid)
+void preloadStacks(TCB_t task)
 {
-    asm(".include \"defines_asm.h\"");
-    asm("MOV R2, SP");  // Me guardo mi SP
+    uint32_t* sp;
 
-    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (IRQ_MODE)"); // voy a IRQ
-    asm("LDR SP,%0" : "=m"(taskVector[pid].SP_IRQ));    // Pongo el SP del IRQ
-    asm("LDR R1, =0x80000000 ");                        // Cargo la posición del código (vma)
-    asm("SUB R0, SP, #4");
-    asm("STR R1, [R0]");                                // Cargo en el SP la posición del LR
+    // Load IRQ_SP pointer
+    sp = (uint32_t*) (task.TTBR0 + (uint32_t) &_SYSTABLES_PHY_SIZE + (2 * (uint32_t) &_STACK_SIZE));
 
-    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (SYS_MODE)"); // Vuelvo a SYS
-    asm("MOV SP, R2");  // Recupero el valor del stack
+    sp -= 1; // Me muevo para cargar el LR
+    *(sp) = 0x80000000;
+    
+    sp -= 14; // Me muevo para cargar el SPSR
+    if (task.privilege == USR)
+    {
+        *(sp) = (0 << I_BIT) | (0 << F_BIT) | (0 << T_BIT) | (USR_MODE);
+    }else{
+        // SYS
+        *(sp) = (0 << I_BIT) | (0 << F_BIT) | (0 << T_BIT) | (SYS_MODE);
+    }
+
+    return;
 }
 
-int32_t loadTask(void* romBasePhy, uint32_t romSize, uint32_t ticks)
+uint32_t loadTask(uint32_t romBasePhy, uint32_t romSize, uint32_t ticks, uint32_t privileges)
 {
     uint32_t i;
     uint32_t vmaOffset;
-    int32_t temp;
     uint32_t pid;
+    uint32_t taskIndex;
 
     // === Me fijo si hay espacio disponible ===
-    temp = getFreePID();
-    if (temp == -1){
-        return -1;  // Si no hay espacio, te devuelve un -1.
+    pid = getFreePID();
+    if (!pid){
+        return FALSE;  // Si no hay espacio, te devuelve un 0.
     }
-    pid = (uint32_t) temp;
+    taskIndex = pid - 1; // El task.PID = i + 1. Ver initScheduler().
     
 
     // === Cargo la tarea en taskVector ===
-    taskVector[pid].isActive = 1;
-    taskVector[pid].ticks = ticks;
+    taskVector[taskIndex].isActive = 1;
+    taskVector[taskIndex].ticks = ticks;
+    taskVector[taskIndex].privilege = privileges;
 
     // === Desactivo paginación ===
-    //MMU_Disable();
+    // TODO: Averiguar si la MMU estaba prendida para saber si apagarla y volver a prender dsps
+    // TODO: Agregar TLB clean
+    // MMU_Disable();
     
     // === Copio de ROM a RAM la tarea ===
-    memcopy((const void *) romBasePhy, (void *) taskVector[pid].taskCodeBasePhy , romSize);
+    memcopy((const void *) romBasePhy, (void *) taskVector[taskIndex].taskCodeBasePhy , romSize);
 
 
     // === Creo una tabla nueva de paginación en la nueva TTBR0 ===
-    // Creo una tabla L1 a partir de TTBR0
-    paginateIdentityMapping(taskVector[pid].TTBR0);
+    paginateIdentityMapping(taskIndex);
 
     // Creo páginas para la systable
     // NOTE: Esto no es obligatorio. Lo mapeamos en una dirección falopa nomas
-    // TODO: Reemplazar 0x10000 por _SYSTABLES_PHY_SIZE
-    for (i = taskVector[pid].TTBR0; i < taskVector[pid].TTBR0 + 0x10000 ; i+= 0x1000)//(uint32_t)&_SYSTABLES_PAGE_SIZE)
+    for (i = taskVector[taskIndex].TTBR0; i < taskVector[taskIndex].TTBR0 + (uint32_t) &_SYSTABLES_PHY_SIZE ; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
-        vmaOffset = i - taskVector[pid].TTBR0;
-        mapNewSmallPage(0x50000000 + vmaOffset, i, 0,0);//XN_ALLOWEXECUTION, PL1_RW);
+        vmaOffset = i - (taskVector[taskIndex].TTBR0);
+        mapNewSmallPage(
+            taskIndex,              // Tarea para la cual estamos creando el mapa
+            0x50000000 + vmaOffset, // VMA
+            i,                      // PHY
+            XN_ALLOWEXECUTION,      // Permiso de ejecución
+            PL0_R                   // Privilegios de acceso
+        );
     }
 
     // Creo páginas para los stacks de la tarea
     // TODO: Reemplazar 0x10000 por _SYSTABLES_PHY_SIZE
-    for (i = taskVector[pid].TTBR0 + 0x10000; i < taskVector[pid].TTBR0 + 0x20000 ; i+= 0x1000)//(uint32_t)&_SYSTABLES_PAGE_SIZE)
+    for (i = taskVector[taskIndex].TTBR0 + 0x10000; i < taskVector[taskIndex].TTBR0 + 0x20000 ; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
-        mapNewSmallPage(0x60000000, i, 0,0);//XN_ALLOWEXECUTION, PL1_RW);
+        vmaOffset = i - (taskVector[taskIndex].TTBR0 + 0x10000);
+        mapNewSmallPage(taskIndex, 0x60000000 + vmaOffset, i, XN_ALLOWEXECUTION, PL0_RW);
     }
 
     // Creo paginas del taskCode
-    for (i = taskVector[pid].taskCodeBasePhy; i < taskVector[pid].taskCodeBasePhy + romSize ; i+= 0x1000)//(uint32_t)&_SYSTABLES_PAGE_SIZE)
+    for (i = taskVector[taskIndex].taskCodeBasePhy; i < taskVector[taskIndex].taskCodeBasePhy + romSize ; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
-        vmaOffset = i - taskVector[pid].taskCodeBasePhy;
-        mapNewSmallPage(0x80000000 + vmaOffset, i, 0,0);//XN_ALLOWEXECUTION, PL1_RW);
+        vmaOffset = i - (taskVector[taskIndex].taskCodeBasePhy);
+        mapNewSmallPage(taskIndex, 0x80000000 + vmaOffset, i, XN_ALLOWEXECUTION, PL0_RW);
     }
 
     // === Precago el stack en el modo IRQ ===
-    preloadStack(pid);
+    // Le paso la dirección PHY donde del SP_IRQ
+    // _preloadStack(taskVector[taskIndex].TTBR0 + (uint32_t) &_SYSTABLES_PHY_SIZE + (2 * (uint32_t) &_STACK_SIZE));
+    preloadStacks(taskVector[taskIndex]);
 
     // === Reactivo paginación ===
     // MMU_Enable();
 
 
-    return 0;
+    return TRUE;
 }
 
-int32_t killTask(uint32_t pid)
+uint32_t killTask(uint32_t taskIndex)
 {
     // TODO: Por ahora no se usa
-    taskVector[pid].isActive = 0;
+    taskVector[taskIndex].isActive = 0;
 
 
-    return 0;
+    return TRUE;
 }
 
-
-void loadStacks( void )
+void TCB2TTBR0(uint32_t taskIndex)
 {
-    // TODO: Mejorar
-    //------------------------------------------------------------------------------//
-    // Inicialización de los stack pointers
-    //------------------------------------------------------------------------------//
-    
-    // NOTE: Ver que solamente se están alterando los bits [7:0] por usar el _c.
-    //       Esto se puede ver mejor en la sección B9.3.11 del ARM Architecture Reference Manual.
-    
-    // Inicialización del Stack Pointer de cada modo. Dejamos deshabilitadas las interrupciones.
-    asm(".include \"defines_asm.h\"");
-    // --- FIQ ---
-    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (FIQ_MODE)");
-    asm("LDR SP, =_FIQ_STACK_TOP");
+    TTBCR ttbcr = MMU_Get_TTBCR();
+    TTBR0 ttbr0 = MMU_Get_TTBR0();
+    uint32_t phyL1;
+    uint8_t tt_size = ttbcr.T0SZ;
 
-    // --- IRQ ---
-    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (IRQ_MODE)");
-    asm("LDR SP, =_IRQ_STACK_TOP");
+    if(tt_size == 0)
+    {
+        // Solamente se usa TTBR0 para la traducción, ver TRM B3.5.5
 
-    // --- SVC ---
-    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (SVC_MODE)");
-    asm("LDR SP, =_SVC_STACK_TOP");
-
-    // --- ABT ---
-    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (ABT_MODE)");
-    asm("LDR SP, =_ABT_STACK_TOP");
-
-    // --- UND ---
-    asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (UND_MODE)");
-    asm("LDR SP, =_UND_STACK_TOP");
-
-    // --- SYS ---
-    asm("MSR cpsr_c,(1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (SYS_MODE)");
-    asm("LDR SP, =_SYS_STACK_TOP");
-
-    // --- USR ---
-    asm("MSR cpsr_c,(1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (USR_MODE)");
-    asm("LDR SP, =_USR_STACK_TOP");
-    // Nos quedamos en el USR corriendo
+        phyL1 = taskVector[taskIndex].TTBR0;
+        ttbr0.ttbr0 = (phyL1 & 0xFFFFC000);
+        MMU_Set_TTBR0(ttbr0);
+    }
 }
-
-
 
 
 
 
 void kernelInit(void)
 {
+    //------------------------------------------------------------------------------//
+    // Inicializo el scheduler
+    //------------------------------------------------------------------------------//    
     initScheduler();
-
 
     //------------------------------------------------------------------------------//
     // Inicializo las tareas con las que amanece el sistem
     //------------------------------------------------------------------------------//
     
-    // NOTE: loadTask(void* romBasePhy, uint32_t romSize, uint32_t ticks)
-
-    if (loadTask(&kernelIdle, 16, 10) == -1)        // La tarea 0 es siempre IDLE
+    // FIXME: Yo quería que puedas pasarle un ptr a función, pero el tenes que pasar la LMA
+    // if (loadTask(&kernelBackground, 16, 10, SYS)) // Siempre tenemos que amanecer con alguna tarea
+    
+    if (loadTask((uint32_t) &_TASK3_LMA, (uint32_t) &_task3_size, 10, USR)) // Siempre tenemos que amanecer con alguna tarea
         cannot_create_task_debug();
     
-    if (loadTask(&task1, 16, 10) == -1)
-        cannot_create_task_debug();
+    // if (loadTask(&task1, 16, 10, SYS))
+    //     cannot_create_task_debug();
 
-    if (loadTask(&task2, 16, 10) == -1)
-        cannot_create_task_debug();
-
-
+    // if (loadTask(&task2, 16, 10, SYS))
+    //     cannot_create_task_debug();
+ 
+    
     //------------------------------------------------------------------------------//
-    // Activamos la MMU
+    // Activamos la MMU (Contexto de la tarea 0)
     //------------------------------------------------------------------------------//
+    TCB2TTBR0(0);           // Setteo la TTBR0
+    
+
     MMU_Invalidate_TLB();
     MMU_Enable();
     MMU_Invalidate_TLB();
+
+    //------------------------------------------------------------------------------//
+    // Ponemos en contexto a la tarea  0 (taskIndex = 0)
+    //------------------------------------------------------------------------------//
+    // _TCB2Stacks(&taskVector[0]); // Cargamos los SP
+    // asm("MSR CPSR_c, #211");     // Vamos a modo SVC sin 
+    // debug();
 
     //------------------------------------------------------------------------------//
     // Habilitamos las interrupciones
     //------------------------------------------------------------------------------//
     _irq_enable();
 
-
+    //------------------------------------------------------------------------------//
+    // Largamos la tarea 1
+    //------------------------------------------------------------------------------//
     kernelIdle();
 }
 
 
-__attribute__((interrupt("naked"))) void kernelIdle(void)
+
+
+__attribute__((naked)) void kernelIdle(void)
 {   
-    // NOTE: Esta línea genera un data abort
-    // uint32_t myvar = *((uint32_t*) 0x80000000); 
-
-    // NOTE: Esta línea genera un prefetch abort
-    // asm("B 0x80000000");    
-
-
     while(1)
     {
         asm("WFI");

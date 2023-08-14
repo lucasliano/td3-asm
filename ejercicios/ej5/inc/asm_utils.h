@@ -1,22 +1,26 @@
-/**
- * Archivo: low_level_cpu_access.h
- * Función: contiene las definiciones de los prototipos en C para poder importar los sys utils
- * Autores: Peccia - Ferreyro
- * Referencia: los códigos desarrollados fueron tomados a partir de diferentes referencias y en base al TRM. El objetivo de esta recopilación
- *             fue darle un enfoque didáctico para el alumno, con comentarios pertinentes y referencias a la documentación disponible.
- *             Ref. 1: https://github.com/allexoll/BBB-BareMetal
- *             Ref. 2: https://github.com/auselen/down-to-the-bone
- *             Ref. 3: https://github.com/mvduin/bbb-asm-demo
- *             Ref. 4: Starterware de Texas Instruments
- *             Ref. 5: AM335x ARM Cortex-A8 - Technical Reference Manual 
- *             Ref. 6: ARM Architectural Reference Manual ARMv7-A and ARMv7-R Edition (ARM)
- *             Ref. 7: Instruction Set Assembly Guide for ARMv7 and earlier ARM Architectures (Version 2.0) - Ref. Guide (ISAG)
- **/
-
 #ifndef __ASM_UTILS_H
 #define __ASM_UTILS_H
 
 #include <stdint.h>
+
+#define reserved_bits(x,y,z) uint8_t reserved##x[ z - y + 1 ];
+
+#define TRUE (uint32_t) 1
+#define FALSE (uint32_t) 0
+
+
+#define I_BIT 7   // Bit para deshabilitar IRQ
+#define F_BIT 6   // Bit para deshabilitar FIQ
+#define T_BIT 5   // Bit para habilitar modo Thumb
+
+#define FIQ_MODE 0b10001 // mode = 0x11
+#define IRQ_MODE 0b10010 // mode = 0x12
+#define SVC_MODE 0b10011 // mode = 0x13
+#define ABT_MODE 0b10111 // mode = 0x17
+#define UND_MODE 0b11011 // mode = 0x1B
+#define SYS_MODE 0b11111 // mode = 0x1F
+#define USR_MODE 0b10000 // mode = 0x10
+
 
 typedef union
 {
@@ -44,11 +48,16 @@ typedef union
 
 extern void _irq_enable(void);
 extern void _irq_disable(void);
+extern void _change_mode (uint32_t mode);
+
+
 extern void _WRITE_8(uint32_t , uint8_t );
 extern void _WRITE_16(uint32_t , uint16_t );
 extern void _WRITE_32(uint32_t , uint32_t );
 extern uint8_t _READ_8(uint32_t );
 extern uint16_t _READ_16(uint32_t );
 extern uint32_t _READ_32(uint32_t );
+
+extern void _load_sp (uint32_t new_sp);
 
 #endif /* defined(__ASM_UTILS_H) */

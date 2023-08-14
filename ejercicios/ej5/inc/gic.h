@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "macros.h"
+#include "asm_utils.h"
 
 #define GICC0_ADDR 0x1E000000
 #define GICD0_ADDR 0x1E001000
