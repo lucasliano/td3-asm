@@ -58,6 +58,7 @@ extern uint8_t _READ_8(uint32_t );
 extern uint16_t _READ_16(uint32_t );
 extern uint32_t _READ_32(uint32_t );
 
-extern void _load_sp (uint32_t new_sp);
+extern uint32_t _READ_SP( void );
+extern void _WRITE_SP( uint32_t newsp);
 
 #endif /* defined(__ASM_UTILS_H) */

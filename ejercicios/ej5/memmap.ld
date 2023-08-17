@@ -122,7 +122,14 @@ SECTIONS{
     /* } > ram /* FIXME: Nos excedimos de lo que declaramos como RAM y no dice nada */
     /* _tasks_end = _TASKS_PHY + _TASK_PHY_SIZE;  */
     
-    _TASK1_LMA = LOADADDR(.bss) + SIZEOF(.bss);
+    _TASK0_LMA = LOADADDR(.bss) + SIZEOF(.bss);
+    .task0 0x80000000 : AT (_TASK0_LMA)
+    { 
+        *(.task0)
+    }
+    _task0_size = SIZEOF(.task0); 
+
+    _TASK1_LMA = LOADADDR(.task0) + SIZEOF(.task0);
     .task1 0x80000000 : AT (_TASK1_LMA)
     { 
         *(.task1)
@@ -134,14 +141,7 @@ SECTIONS{
     { 
         *(.task2)
     }
-    _task2_size = SIZEOF(.task2);  
-
-    _TASK3_LMA = LOADADDR(.task2) + SIZEOF(.task2);
-    .task3 0x80000000 : AT (_TASK3_LMA)
-    { 
-        *(.task3)
-    }
-    _task3_size = SIZEOF(.task3); 
+    _task2_size = SIZEOF(.task2);    
     
 }
 

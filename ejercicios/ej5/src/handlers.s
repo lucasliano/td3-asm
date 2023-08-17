@@ -107,11 +107,10 @@ _IRQ_handler:
     
     @ADD   R9, R9, #2            @ Nótese que esto no se almacena en ningún lugar porque no se hace STR/PUSH en ningun momento.
 
-
+    MOV R8, #0 
     POP  {R8}                   @ Guardo en R7 y R8 los valores del SPSR y SP.
     MSR  SPSR, R8               @ Recupero el valor del SPSR
 
-    @ TODO: ¿Por qué no se utiliza el R8 (que almacenó el SPSR)? <- ¿Hay que meterle un ^ al POP?
     LDMFD SP!, { R0-R12, PC }^ @ Carga de R0 a R12 y el PC desde la pila utilizando SP como base. El ^ hace que se cargue el CPSR desde el SPSR directamente.
 
 

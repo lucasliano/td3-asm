@@ -38,6 +38,8 @@ typedef volatile struct {
 
     uint32_t taskCodeBasePhy;
 
+    // NOTE: Agregar cosas nuevas acá abajo, para evitar mover los index de los SP.
+
 } TCB_t;
 
 
@@ -56,14 +58,11 @@ uint32_t getFreePID(void);
 void preloadStacks(TCB_t task);
 uint32_t loadTask(uint32_t romBasePhy, uint32_t romSize, uint32_t ticks, uint32_t privileges);
 uint32_t killTask(uint32_t taskIndex);
+void TCB2TTBR0(uint32_t taskIndex);
 void kernelInit(void);
-
-void kernelIdle(void);
 
 
 // Esto en kernel.s
-extern uint32_t _READ_SP( void );
-extern void _WRITE_SP( uint32_t newsp);
 
 extern void _TCB2Stacks( TCB_t* task);
 extern void _stacks2TCB( TCB_t* task);

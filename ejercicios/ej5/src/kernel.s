@@ -14,15 +14,7 @@
 /*--- Arranca la sección --- */
 .section .text, "a"
 
-.align 4
-_READ_SP:
-    MOV R0, SP
-    BX LR
-
-_WRITE_SP:
-    MOV SP, R0
-    BX LR
-    
+.align 4    
 _TCB2Stacks:
     //------------------------------------------------------------------------------//
     // Copia los valores del TCB en los SP. Se deshabilitan las FIQ/IRQ.

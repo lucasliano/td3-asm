@@ -14,12 +14,12 @@ extern int _STACK_SIZE;
 extern int _SYSTABLES_PAGE_SIZE;
 
 // --- ROM de las tareas ---
+extern int _TASK0_LMA;
+extern int _task0_size;
 extern int _TASK1_LMA;
 extern int _task1_size;
 extern int _TASK2_LMA;
 extern int _task2_size;
-extern int _TASK3_LMA;
-extern int _task3_size;
 
 
 // --- Global Variables ---
@@ -245,32 +245,32 @@ void kernelInit(void)
     // FIXME: Yo quería que puedas pasarle un ptr a función, pero el tenes que pasar la LMA
     // if (loadTask(&kernelBackground, 16, 10, SYS)) // Siempre tenemos que amanecer con alguna tarea
     
-    if (loadTask((uint32_t) &_TASK3_LMA, (uint32_t) &_task3_size, 10, USR)) // Siempre tenemos que amanecer con alguna tarea
+    // La primer tarea es el KernelIdle
+    if (loadTask((uint32_t) &_TASK0_LMA, (uint32_t) &_task0_size, 1, SYS))
         cannot_create_task_debug();
     
-    // if (loadTask(&task1, 16, 10, SYS))
-    //     cannot_create_task_debug();
+    if (loadTask((uint32_t) &_TASK1_LMA, (uint32_t) &_task1_size, 1, SYS))
+        cannot_create_task_debug();
 
-    // if (loadTask(&task2, 16, 10, SYS))
-    //     cannot_create_task_debug();
- 
+    if (loadTask((uint32_t) &_TASK2_LMA, (uint32_t) &_task2_size, 1, USR))
+        cannot_create_task_debug();
+
+
+
+    // TODO: No funciona el cambio de estado.. Por algún motivo no popea bien
+    //       Cuando tiene que cambiar de tarea, a pesar de que está bien cargado el stack.
+
+
+
     
     //------------------------------------------------------------------------------//
     // Activamos la MMU (Contexto de la tarea 0)
     //------------------------------------------------------------------------------//
     TCB2TTBR0(0);           // Setteo la TTBR0
-    
 
     MMU_Invalidate_TLB();
     MMU_Enable();
     MMU_Invalidate_TLB();
-
-    //------------------------------------------------------------------------------//
-    // Ponemos en contexto a la tarea  0 (taskIndex = 0)
-    //------------------------------------------------------------------------------//
-    // _TCB2Stacks(&taskVector[0]); // Cargamos los SP
-    // asm("MSR CPSR_c, #211");     // Vamos a modo SVC sin 
-    // debug();
 
     //------------------------------------------------------------------------------//
     // Habilitamos las interrupciones
@@ -278,20 +278,7 @@ void kernelInit(void)
     _irq_enable();
 
     //------------------------------------------------------------------------------//
-    // Largamos la tarea 1
+    // Largamos el kernel
     //------------------------------------------------------------------------------//
-    kernelIdle();
-}
-
-
-
-
-__attribute__((naked)) void kernelIdle(void)
-{   
-    while(1)
-    {
-        asm("WFI");
-    }
-
-    return; // Should never get here
+    asm("WFI");
 }

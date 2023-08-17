@@ -1,6 +1,15 @@
 #include "../inc/kernel.h"
 
+extern int _KERNEL_STACKS_PHY;
+extern int _STACK_SIZE;
+
 extern TCB_t taskVector[16];
+
+
+uint32_t currTask = 0;
+
+uint32_t timeframeCounter = 0;
+uint32_t currentTaskCounter = 0;
 
 __attribute__((section(".handlers"))) __attribute__((interrupt("undef"))) void undef_kernel_handler(){
 
@@ -18,11 +27,26 @@ __attribute__((section(".handlers"))) __attribute__((interrupt("abort"))) void d
 
 }
 
-// __attribute__((interrupt("irq"))) <- Esto no funciona (pone mal el PC con el LR).
 
-// TODO: Ver que chota pasa acá con el naked.. Ver que tiene los "" así que puede ser por eso.
-//       El problema que estoy teniendo es que a pesar del cambio de contexto, el chabon recuepra
-//       el stack pointer a partir del link register.
+uint32_t findNextAvailableTask( uint32_t currIndex )
+{
+    //-----------------------------------------------------//
+    // Devuelve el index de la siguiente tarea cuando hay
+    // sino devuelve 0, que se tiene que interpretar como
+    // una llamdada al kernelIdle
+    //-----------------------------------------------------//
+    
+
+    uint32_t i;
+
+    for (i = currIndex + 1; i < 16 ; i++)
+    {
+        if (taskVector[i].isActive)
+            return i;
+    }
+
+    return 0;
+}
 
 
 __attribute__((section(".handlers"))) __attribute__((naked)) void irq_kernel_handler(){
@@ -31,26 +55,67 @@ __attribute__((section(".handlers"))) __attribute__((naked)) void irq_kernel_han
 
     // static uint32_t timeframeCounter = 0;
     // static uint32_t currentTaskCounter = 0;
+    uint32_t nextTask;
 
     uint32_t id = GICC0->IAR;
-
     
     // NOTE: Es una parte muy delicada del código porque como hay un posible cambio de contexto
-    //       no podemos jugar con los registros libremente.
-
-    // debug();
+    //       no podemos jugar con los registros libremente. Vamos a utilizar el R10 como LR.
+    //       Tener cuidado con las llamadas a función. Si algo no funciona es muy posible que el
+    //       fp se haya ido de viaje.
 
     switch(id){
         case 36: // Timer interrupt
             GICC0->EOIR = id;           //Esto da por finalizada la interrupción (WFI funca)
             TIMER0->Timer1IntClr = 0x1; //Al escribir cualquier valor en el registro se limpia la interrupcion del contador
 
-            
             // Necesito salvar el LR antes de cambiar de contexto
-            asm("MOV R2, LR");
-            // TCB2TTBR0(0);                // Setteo la TTBR0
-            _TCB2Stacks(&taskVector[0]); // Cargamos los SP
-            asm("MOV LR, R2");
+            asm("MOV R10, LR");
+            debugTask(currTask);
+            asm("NOP");
+
+            // --- Lógica de scheduling ---
+            if (timeframeCounter)
+            {
+                // Acá estamos dentro del timeframe
+                timeframeCounter -= 1;
+
+                if (currentTaskCounter)
+                {
+                    // Estamos dentro de los ticks de la tarea
+                    currentTaskCounter -= 1;
+                }else{
+                    // Cambiamos entre tareas dentro del time frame
+
+                    _stacks2TCB(&taskVector[currTask]); // Guardamos los SP
+                    
+                    nextTask = findNextAvailableTask (currTask);
+                    if (nextTask) // Si hay una tarea para llamar, sino IDLE
+                    {
+                        currTask = nextTask;
+                        currentTaskCounter = taskVector[nextTask].ticks - 1;
+                    } else {
+                        currTask = 0;
+                        currentTaskCounter = timeframeCounter; // Me quedo el tiempo restante del frame acá.
+                    }
+                    TCB2TTBR0(currTask);                // Setteo la TTBR0
+                    _TCB2Stacks(&taskVector[currTask]); // Cargamos los SP
+                }
+            }else{
+                // Saltamos de kernelIdle a task0
+                timeframeCounter = 5 - 1;
+                
+                // FIXME: La tarea 1 siempre tiene que estar activa
+                currTask = 1;
+                currentTaskCounter = taskVector[currTask].ticks - 1;
+                
+                TCB2TTBR0(currTask);                // Setteo la TTBR0
+                _TCB2Stacks(&taskVector[currTask]); // Cargamos los SP
+            }
+
+            debugTask(currTask);
+            asm("NOP");
+            asm("MOV LR, R10");
 
             break;
 
@@ -58,7 +123,6 @@ __attribute__((section(".handlers"))) __attribute__((naked)) void irq_kernel_han
             break;
     } 
     
-    // debug();
 
     asm("BX LR");
 } 

@@ -15,27 +15,27 @@ __attribute__((section(".text"))) __attribute__((naked)) void hardwareInit(){
     asm(".include \"defines_asm.h\"");
     // --- FIQ ---
     asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (FIQ_MODE)");
-    _load_sp((uint32_t)&_KERNEL_STACKS_PHY + (1 * (uint32_t)&_STACK_SIZE) );
+    _WRITE_SP((uint32_t)&_KERNEL_STACKS_PHY + (1 * (uint32_t)&_STACK_SIZE) );
 
     // --- IRQ ---
     asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (IRQ_MODE)");
-    _load_sp((uint32_t)&_KERNEL_STACKS_PHY + (2 * (uint32_t)&_STACK_SIZE) );
+    _WRITE_SP((uint32_t)&_KERNEL_STACKS_PHY + (2 * (uint32_t)&_STACK_SIZE) );
 
     // --- ABT ---
     asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (ABT_MODE)");
-    _load_sp((uint32_t)&_KERNEL_STACKS_PHY + (3 * (uint32_t)&_STACK_SIZE) );
+    _WRITE_SP((uint32_t)&_KERNEL_STACKS_PHY + (3 * (uint32_t)&_STACK_SIZE) );
 
     // --- UND ---
     asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (UND_MODE)");
-    _load_sp((uint32_t)&_KERNEL_STACKS_PHY + (4 * (uint32_t)&_STACK_SIZE) );
+    _WRITE_SP((uint32_t)&_KERNEL_STACKS_PHY + (4 * (uint32_t)&_STACK_SIZE) );
 
     // --- SYS ---
     asm("MSR cpsr_c,(1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (SYS_MODE)");
-    _load_sp((uint32_t)&_KERNEL_STACKS_PHY + (5 * (uint32_t)&_STACK_SIZE) );
+    _WRITE_SP((uint32_t)&_KERNEL_STACKS_PHY + (5 * (uint32_t)&_STACK_SIZE) );
     
     // --- SVC ---
     asm("MSR cpsr_c, (1 << I_BIT) | (1 << F_BIT) | (0 << T_BIT) | (SVC_MODE)");
-    _load_sp((uint32_t)&_KERNEL_STACKS_PHY + (6 * (uint32_t)&_STACK_SIZE) );
+    _WRITE_SP((uint32_t)&_KERNEL_STACKS_PHY + (6 * (uint32_t)&_STACK_SIZE) );
     // Nos quedamos en el SVC corriendo
 
     //------------------------------------------------------------------------------//
