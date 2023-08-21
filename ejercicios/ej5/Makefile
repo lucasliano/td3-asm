@@ -76,7 +76,7 @@ $(BIN)/${ROOT_NAME}.bin: $(OBJ)/${ROOT_NAME}.lelf
 
 # Generating .lelf file from *.elf
 $(OBJ)/${ROOT_NAME}.lelf: ${OBJ_FILES_S} ${OBJ_FILES_C}
-	@echo "\nLinkeando...\n"
+	@echo "\nLinkeando..."
 	@mkdir -p obj
 	@mkdir -p lst
 	$(CHAIN)-ld ${LDFLAGS} memmap.ld ${OBJ_FILES_S} ${OBJ_FILES_C} -o $@ -Map $(LST)/$(ROOT_NAME).map
@@ -102,7 +102,7 @@ $(OBJ)/%_c.elf: $(SRC)/%.c
 	@mkdir -p bin
 	@mkdir -p obj
 	@mkdir -p lst
-	@echo "\nCompiling .c sources...\n"
+	@echo "\nCompiling .c sources..."
 	$(CHAIN)-gcc ${CFLAGS} -c $< -o $@
 
 
