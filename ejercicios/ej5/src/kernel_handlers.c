@@ -171,6 +171,8 @@ __attribute__((section(".handlers"))) __attribute__((naked)) void irq_kernel_han
                     _TCB2Stacks(&taskVector[currTask]); // Cargamos los SP
                 }
             }else{
+                // FIXME: La suma de los ticks de cada tarea no puede ser superior a timeframe
+
                 // Saltamos de kernelIdle a task0
                 timeframeCounter = 10 - 1;
                 
