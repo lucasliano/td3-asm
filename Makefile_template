@@ -29,10 +29,10 @@ SRC=src
 
 # List source files
 SRC_FILES_C = ${wildcard ${SRC}/*.c}
-OBJ_FILES_C = ${subst ${SRC},${OBJ},${SRC_FILES_C:.c=_c.elf}}
+OBJ_FILES_C = ${subst ${SRC},${OBJ},${SRC_FILES_C:.c=_c.o}}
 
 SRC_FILES_S = ${wildcard ${SRC}/*.s}
-OBJ_FILES_S = ${subst ${SRC},${OBJ},${SRC_FILES_S:.s=_s.elf}}
+OBJ_FILES_S = ${subst ${SRC},${OBJ},${SRC_FILES_S:.s=_s.o}}
 
 #################################################################
 ##                           Rules                             ##
@@ -45,7 +45,7 @@ qemu:
 	qemu-system-arm -M realview-pb-a8 -m 512M -no-reboot -nographic -monitor telnet:127.0.0.1:1234,server,nowait -kernel ${BIN}/${ROOT_NAME}.bin -S -gdb tcp::2159
 
 ddd:
-	cd .. && ddd --debugger gdb-multiarch ${ROOT_NAME}/${OBJ}/${ROOT_NAME}.elf
+	cd .. && ddd --debugger gdb-multiarch ${ROOT_NAME}/${OBJ}/${ROOT_NAME}.o
 
 debug:
 	qemu-system-arm -M realview-pb-a8 -m 512M -no-reboot -nographic -monitor telnet:127.0.0.1:1234,server,nowait -kernel ${BIN}/${ROOT_NAME}.bin -S -gdb tcp::2159 & gdb-multiarch -iex "add-auto-load-safe-path /" ${OBJ}/${ROOT_NAME}.lelf
@@ -74,7 +74,7 @@ help:
 $(BIN)/${ROOT_NAME}.bin: $(OBJ)/${ROOT_NAME}.lelf
 	$(CHAIN)-objcopy -O binary $< $@
 
-# Generating .lelf file from *.elf
+# Generating .lelf file from *.o
 $(OBJ)/${ROOT_NAME}.lelf: ${OBJ_FILES_S} ${OBJ_FILES_C}
 	@echo "\nLinkeando..."
 	@mkdir -p obj
@@ -87,7 +87,7 @@ $(OBJ)/${ROOT_NAME}.lelf: ${OBJ_FILES_S} ${OBJ_FILES_C}
 	$(CHAIN)-objdump -D $@ > $(basename $@).lst
 
 # ASM sources assembly
-$(OBJ)/%_s.elf: $(SRC)/%.s
+$(OBJ)/%_s.o: $(SRC)/%.s
 	@echo ""
 	@mkdir -p bin
 	@mkdir -p obj
@@ -97,7 +97,7 @@ $(OBJ)/%_s.elf: $(SRC)/%.s
 	$(CHAIN)-as $< ${ASFLAGS} -o $@ -a > $(basename $@).lst
 
 # C sources compiling
-$(OBJ)/%_c.elf: $(SRC)/%.c
+$(OBJ)/%_c.o: $(SRC)/%.c
 	@echo ""
 	@mkdir -p bin
 	@mkdir -p obj
