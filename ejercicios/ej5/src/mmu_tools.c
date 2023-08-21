@@ -1,5 +1,34 @@
 #include "../inc/mmu_tools.h"
 
+__attribute__((section(".text"))) DFAR MMU_Get_DFAR(void)
+{
+    DFAR dfar;
+
+    asm("MRC p15, 0, R0, c6, c0, 0"); // Read Data Fault Address Register
+    asm("STR R0,%0" : "=m"(dfar.dfar));
+
+    return dfar;
+}
+
+__attribute__((section(".text"))) DFSR MMU_Get_DFSR(void)
+{
+    DFSR dfsr;
+
+    asm("MRC p15, 0, R0, c5, c0, 0"); //Read Data Fault Status Register
+    asm("STR R0,%0" : "=m"(dfsr.dfsr));
+
+    return dfsr;
+}
+
+__attribute__((section(".text"))) void MMU_Set_DFSR(DFSR dfsr)
+{
+    asm("LDR R0,%0" : "=m"(dfsr.dfsr));
+    asm("ISB");                     // Instruction Synchronization Barrier
+    asm("DSB");                     // Data Synchronization Barrier
+
+    asm("MCR p15, 0, R0, c5, c0, 0"); //Write Data Fault Status Register
+}
+
 __attribute__((section(".text"))) TTBCR MMU_Get_TTBCR(void)
 {
     TTBCR ttbcr;

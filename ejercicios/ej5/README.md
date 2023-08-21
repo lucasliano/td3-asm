@@ -1,82 +1,11 @@
-# Repositorio para trabajar con MMU de Cortex A8
+# Task Scheduler Simple
 
-Los archivos que les paso cumplen varias funciones:
-- Facilitarles código para trabajar,
-- Organizarles un poco el código,
-- Darles el puntapie inicial a fin de que puedan ver de donde leer para continuar.
+Tomar el ejercicio anterior, y agregar dos tareas.
 
-Van a ver que son funciones para `leer` y `escribir` registros necesarios para la MMU.
+- **Tarea 1:** Deberá corroborar el correcto funcionamiento de la RAM (escribiendo y luego leyendo lo escrito) en el rango 0x70A000000 a 0x70A0FFFF, utilizando el word 0x55AA55AA. Debe resguardar la información antes de escribir cada bloque.
 
-Una pequeña ayudita más: 
+- **Tarea 2:** Deberá recorrer la RAM en el rango 0x70A10000 a 0x70A1FFFF. En cada porción de memoria, deberá hacer un toggle de lo leído, es decir, si lee un bit en 1 lo debe pasar a 0, y viceversa.
 
+La administración de la ejecución de las tareas se realizará desde un scheduler que operará dentro de un timeframe de 100ms. Las tareas se ejecutarán durante 10ms antes de ser suspendidas hasta el próximo timeframe. Las tareas corren indefinidamente.
 
-```c
-// Variables para configuración de MMU
-TTBCR ttbcr;
-TTBR0 ttbr0;
-SCTLR sctlr;
-DACR dacr;
-uint32_t vbar, i;
-
-uint32_t pa;
-uint32_t sp;
-
-// Esta lectura, limpia las variables
-ttbcr = MMU_Get_TTBCR();
-sctlr = MMU_Get_SCTLR();
-ttbr0 = MMU_Get_TTBR0();
-dacr = MMU_Get_DACR();
-vbar = MMU_Get_VBAR();
-
-//------------------------------------------------------------------------------//
-// Inicializamos el GIC y las interrupciones deseadas
-//------------------------------------------------------------------------------//
-
-//------------------------------------------------------------------------------//
-// Inicializamos y configuramos el Timer
-//------------------------------------------------------------------------------//
-
-//------------------------------------------------------------------------------//
-// Copiamos nuestro código a las zonas de memoria requeridas
-//------------------------------------------------------------------------------//
-
-//------------------------------------------------------------------------------//
-// Configuramos nuestro mapa de memoria
-//------------------------------------------------------------------------------//
-// Configuramos el Domain Manager Control Register - Por ahora, todo en Manager domain:
-dacr.dacr = 0xFFFFFFFF;
-MMU_Set_DACR(dacr);
-
-// Configuramos el TTBCR. Usamos la descripción como "short descriptor" por ende, si bien la estructura
-// dice T0SZ, por compatiblidad con el modo largo, esos mismos bits representan a N en el modo corto. Así
-// lo ponemos en cero para que TTBR0 pueda acceder a toda la memoria direccionable disponible (4 GB)
-ttbcr.T0SZ = 0;
-MMU_Set_TTBCR(ttbcr);
-
-// Configuramos el SCTLR
-sctlr.TRE = 0;
-sctlr.C = 0;
-sctlr.I = 0;
-sctlr.Z = 0;
-sctlr.AFE = AF_NO;
-MMU_Set_SCTLR(sctlr);
-
-// Invalidamos la TLB, según documentación
-MMU_Invalidate_TLB();
-```
-
-
-Luego de esto, deberían setear el primer nivel de tabla de traducción, algo así:
-
-```c
-// Ahora, empezamos a armar el mapa de memoria del Kernel
-// Para eso, colocamos la TTBR0 del kernel, que como es el primero, lo tomamos como la primer dirección física disponible para la tabla de sistemas
-MMU_Mi_Funcion_Que_Setea_La_FirstLevelTranslation((uint32_t)&__SYSTABLES_PHYSICAL);
-        
-```
-
-Dónde pasamos por ejemplo, la dirección física de dónde comienza nuestra tabla de primer nivel. 
-
-Luego, comienza la tarea de completar las tablas de segundo nivel dónde se mapean las páginas. 
-
-Finalmente, no olviden que para que el procesador (una vez `activada la MMU`) pueda seguir accediendo a los periféricos esa región de memoria, debe estar mapeada por la MMU :). Vean el mapa de memoria de la plataforma que estamos emulando y definan esa región. 
+El tiempo remanente del timeframe lo ocupará una tercer tarea que ponga el procesador en un estado de bajo consumo de energía, hasta el inicio del próximo frame, o hasta que ocurra un evento asincrónico.

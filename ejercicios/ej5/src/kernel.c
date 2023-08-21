@@ -29,7 +29,7 @@ TCB_t taskVector[16];
 // |---------|---------|-----------------------|---------------|
 // |  Tables |   0x0   |         64 kiB        |  0x0001_0000  |
 // |  Stacks | 0x10000 | 60 KiB (sobran 4 KiB) |  0x0000_fffc  |
-// |   Code  | 0x20000 |         15 MiB        |  0x00fe_0000  |
+// |   Code  | 0x20000 |         15 MiB        |  0x00fe_ffff  |
 
 
 
@@ -60,6 +60,7 @@ void initScheduler (void)
     emptyTask.isActive = 0;
     emptyTask.L2TablesCount = 0;
     emptyTask.privilege = USR;
+    emptyTask.dataPageCount = 0;
 
 
     for (i = 0; i < 16; i++)//(uint32_t) &_KERNEL_MAX_TASKS; i++)
@@ -75,7 +76,8 @@ void initScheduler (void)
         emptyTask.taskBaseStackPhy = taskBaseStackPhy;
 
 
-        taskBaseStackVMA = 0x60000000; // Pongo la VMA
+        // taskBaseStackVMA = 0x60000000; // Pongo la VMA
+        taskBaseStackVMA = taskBaseStackPhy; // Pongo la PHY
 
         emptyTask.SP_FIQ = taskBaseStackVMA + (1 * (uint32_t) &_STACK_SIZE);
         emptyTask.SP_IRQ = taskBaseStackVMA + (2 * (uint32_t) &_STACK_SIZE) - 15*4; // Tenemos en consideración el preload {r0-r12,pc,spsr}
@@ -171,7 +173,8 @@ uint32_t loadTask(uint32_t romBasePhy, uint32_t romSize, uint32_t ticks, uint32_
             0x50000000 + vmaOffset, // VMA
             i,                      // PHY
             XN_ALLOWEXECUTION,      // Permiso de ejecución
-            PL0_R                   // Privilegios de acceso
+            PL1_RW                  // Privilegios de acceso
+            // PL0_R                   // Privilegios de acceso
         );
     }
 
@@ -180,14 +183,15 @@ uint32_t loadTask(uint32_t romBasePhy, uint32_t romSize, uint32_t ticks, uint32_
     for (i = taskVector[taskIndex].TTBR0 + 0x10000; i < taskVector[taskIndex].TTBR0 + 0x20000 ; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
         vmaOffset = i - (taskVector[taskIndex].TTBR0 + 0x10000);
-        mapNewSmallPage(taskIndex, 0x60000000 + vmaOffset, i, XN_ALLOWEXECUTION, PL0_RW);
+        // mapNewSmallPage(taskIndex, 0x60000000 + vmaOffset, i, XN_ALLOWEXECUTION, PL0_RW);
+        mapNewSmallPage(taskIndex, i, i, XN_ALLOWEXECUTION, PL1_RW);//PL0_RW);
     }
 
     // Creo paginas del taskCode
     for (i = taskVector[taskIndex].taskCodeBasePhy; i < taskVector[taskIndex].taskCodeBasePhy + romSize ; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
         vmaOffset = i - (taskVector[taskIndex].taskCodeBasePhy);
-        mapNewSmallPage(taskIndex, 0x80000000 + vmaOffset, i, XN_ALLOWEXECUTION, PL0_RW);
+        mapNewSmallPage(taskIndex, 0x80000000 + vmaOffset, i, XN_ALLOWEXECUTION, PL1_RW);//PL0_RW);
     }
 
     // === Precago el stack en el modo IRQ ===
@@ -249,18 +253,11 @@ void kernelInit(void)
     if (loadTask((uint32_t) &_TASK0_LMA, (uint32_t) &_task0_size, 1, SYS))
         cannot_create_task_debug();
     
-    if (loadTask((uint32_t) &_TASK1_LMA, (uint32_t) &_task1_size, 1, SYS))
+    if (loadTask((uint32_t) &_TASK1_LMA, (uint32_t) &_task1_size, 1, USR))
         cannot_create_task_debug();
 
     if (loadTask((uint32_t) &_TASK2_LMA, (uint32_t) &_task2_size, 1, USR))
         cannot_create_task_debug();
-
-
-
-    // TODO: No funciona el cambio de estado.. Por algún motivo no popea bien
-    //       Cuando tiene que cambiar de tarea, a pesar de que está bien cargado el stack.
-
-
 
     
     //------------------------------------------------------------------------------//
@@ -280,5 +277,8 @@ void kernelInit(void)
     //------------------------------------------------------------------------------//
     // Largamos el kernel
     //------------------------------------------------------------------------------//
-    asm("WFI");
+    while(1)
+    {
+        asm("WFI");
+    }
 }

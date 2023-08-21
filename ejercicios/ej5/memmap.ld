@@ -94,14 +94,14 @@ SECTIONS{
     _KERNEL_CODE_SIZE = SIZEOF(.kernel);
 
     .data : {               /*Datos*/
-        . = ALIGN(4);       /*Salta a la proxima direccion alineada a 4*/
+        . = ALIGN(4096);       /*Salta a la proxima direccion alineada a 4*/
         _DATA_START = .;
         *(.data*)
         _DATA_END = .;
     } > ram
 
     .bss : {                /*Variables no inicializadas*/
-        . = ALIGN(4);
+        . = ALIGN(4096);
         _BSS_START = .;
         *(.bss*)
         _BSS_END = .;

@@ -107,7 +107,6 @@ _IRQ_handler:
     
     @ADD   R9, R9, #2            @ Nótese que esto no se almacena en ningún lugar porque no se hace STR/PUSH en ningun momento.
 
-    MOV R8, #0 
     POP  {R8}                   @ Guardo en R7 y R8 los valores del SPSR y SP.
     MSR  SPSR, R8               @ Recupero el valor del SPSR
 

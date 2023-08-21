@@ -36,9 +36,11 @@ typedef volatile struct {
     uint32_t SP_SYS;
     uint32_t SP_IRQ;
 
+    // NOTE: Agregar cosas nuevas acá abajo, para evitar mover los index de los SP.
+
     uint32_t taskCodeBasePhy;
 
-    // NOTE: Agregar cosas nuevas acá abajo, para evitar mover los index de los SP.
+    uint32_t dataPageCount;
 
 } TCB_t;
 
@@ -66,5 +68,7 @@ void kernelInit(void);
 
 extern void _TCB2Stacks( TCB_t* task);
 extern void _stacks2TCB( TCB_t* task);
+extern void _TCB2StacksABT( TCB_t* task);
+extern void _stacks2TCBABT( TCB_t* task);
 
 #endif // __KERNEL_LIB_H

@@ -262,7 +262,46 @@ typedef union {
 } SECONDLEVEL_SMALLPAGE_DESCRIPTOR;
 
 
+/**
+ * @brief Data Fault Status Register
+ * 
+ * Ver TRM B4.1.52 para un detalle de cada campo
+ * 
+ */
+typedef union {
+    uint32_t dfsr;
+    struct {
+        uint32_t FS : 4;
+        uint32_t DOMAIN : 4;
+        uint32_t SBZ : 1;
+        uint32_t LPAE : 1;
+        uint32_t FS_4 : 1;
+        uint32_t WnR : 1;
+        uint32_t ExT : 1;
+        uint32_t CM : 1;
+        uint32_t UNK : 18;
+    };
+} DFSR;
 
+/**
+ * @brief Data Fault Address Register
+ * 
+ * Ver TRM B4.1.51 para un detalle de cada campo
+ * 
+ */
+typedef union {
+    uint32_t dfar;
+    struct {
+        uint32_t data : 32;
+    };
+} DFAR;
+
+
+
+// --- Data Fault Registers ---
+DFAR MMU_Get_DFAR(void);
+DFSR MMU_Get_DFSR(void);
+void MMU_Set_DFSR(DFSR dfsr);
 
 // --- Translation Table Base Control Register ---
 TTBCR MMU_Get_TTBCR(void);

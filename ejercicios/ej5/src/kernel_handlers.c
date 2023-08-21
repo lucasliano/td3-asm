@@ -11,20 +11,54 @@ uint32_t currTask = 0;
 uint32_t timeframeCounter = 0;
 uint32_t currentTaskCounter = 0;
 
-__attribute__((section(".handlers"))) __attribute__((interrupt("undef"))) void undef_kernel_handler(){
+__attribute__((section(".handlers"))) __attribute__((interrupt("undef"))) void undef_kernel_handler()
+{
 
 }
 
-__attribute__((section(".handlers"))) __attribute__((interrupt("swi"))) void swi_kernel_handler(){
+__attribute__((section(".handlers"))) __attribute__((interrupt("swi"))) void swi_kernel_handler()
+{
 
 }
 
-__attribute__((section(".handlers"))) __attribute__((interrupt("abort"))) void pref_abort_kernel_handler(){
+__attribute__((section(".handlers"))) __attribute__((interrupt("abort"))) void pref_abort_kernel_handler()
+{
 
 }
 
-__attribute__((section(".handlers"))) __attribute__((interrupt("abort"))) void data_abort_kernel_handler(){
+__attribute__((section(".handlers"))) void data_abort_kernel_handler()
+{
+    /* ------------------------- Funcionamiento actual ------------------------------------
+    * El programa va darte tanta memoria como pueda en la 0x8000_0000.
+    * FIXME: Debería verificar que la posición de memoria que tira data abort está
+    *        en el rango de direcciones válidos para task_data (0x9i00_0000 a 0x9iFF_FFFF)
+    *        donde i es el índice de la tarea.
+    * ------------------------------------------------------------------------------------- */
+    
+    // Desactivo la MMU
+    MMU_Disable();
 
+
+    DFSR dfsr = MMU_Get_DFSR(); // Por ahora no verifico nada. Solo lo hago para ver que fue.
+
+    DFAR dfar = MMU_Get_DFAR(); // Saco el address que me generó la excepción.
+
+
+    // Creo una nueva página en la 0x8000_0000
+    mapNewSmallPage(
+        currTask,
+        dfar.data,
+        0x80000000 + ( 0x1000 * taskVector[currTask].dataPageCount),
+        XN_BLOCKEXECUTION,
+        PL0_RW
+    );
+
+    taskVector[currTask].dataPageCount++;
+
+
+    // Reactivo la MMU
+    MMU_Invalidate_TLB();
+    MMU_Enable();
 }
 
 
@@ -72,7 +106,6 @@ __attribute__((section(".handlers"))) __attribute__((naked)) void irq_kernel_han
             // Necesito salvar el LR antes de cambiar de contexto
             asm("MOV R10, LR");
             debugTask(currTask);
-            asm("NOP");
 
             // --- Lógica de scheduling ---
             if (timeframeCounter)
@@ -98,6 +131,8 @@ __attribute__((section(".handlers"))) __attribute__((naked)) void irq_kernel_han
                         currTask = 0;
                         currentTaskCounter = timeframeCounter; // Me quedo el tiempo restante del frame acá.
                     }
+
+                    MMU_Invalidate_TLB();
                     TCB2TTBR0(currTask);                // Setteo la TTBR0
                     _TCB2Stacks(&taskVector[currTask]); // Cargamos los SP
                 }
@@ -109,12 +144,12 @@ __attribute__((section(".handlers"))) __attribute__((naked)) void irq_kernel_han
                 currTask = 1;
                 currentTaskCounter = taskVector[currTask].ticks - 1;
                 
+                MMU_Invalidate_TLB();
                 TCB2TTBR0(currTask);                // Setteo la TTBR0
                 _TCB2Stacks(&taskVector[currTask]); // Cargamos los SP
             }
 
             debugTask(currTask);
-            asm("NOP");
             asm("MOV LR, R10");
 
             break;
