@@ -48,7 +48,7 @@ __attribute__((section(".handlers"))) void data_abort_kernel_handler()
     mapNewSmallPage(
         currTask,
         dfar.data,
-        0x80000000 + ( 0x1000 * taskVector[currTask].dataPageCount),
+        0x80000000 + ( 0x01000000 * currTask) + ( 0x1000 * taskVector[currTask].dataPageCount),
         XN_BLOCKEXECUTION,
         PL0_RW
     );

@@ -1,5 +1,7 @@
 #include "../inc/tasks.h"
 
+#include "../inc/debug.h"
+
 
 // FIXME: Esto está en .bss que está en 0x7003_0000
 uint32_t contador1 = 0;
@@ -51,31 +53,39 @@ __attribute__((section(".task1"), aligned(4), naked)) void task1(void){
             ptrRam++;  
 
         if(ptrRam >= (uint32_t*)0x9000FFFF)
+        {
             ptrRam = (uint32_t*)0x90000000;            
+            debug(0);
+            asm("WFI");
+        }
     }
 }
 
 
-// __attribute__((section(".task2"), aligned(4), naked)) void task2(void){
-//     /* ------------------------- TAREA 2 ------------------------------------
-//     * Invierto todos los bits de la memoria. Se recorre desde la posición 
-//     * 0x70A10000 hasta la posición 0x70A1FFFF.
-//     * ---------------------------------------------------------------------- */
+__attribute__((section(".task2"), aligned(4), naked)) void task2(void){
+    /* ------------------------- TAREA 2 ------------------------------------
+    * Invierto todos los bits de la memoria. Se recorre desde la posición 
+    * 0x90000000 hasta la posición 0x9000FFFF.
+    * ---------------------------------------------------------------------- */
     
-//     asm("MOV R0, #2");      // Solo para identificar la tarea 1 en el debugger.
+    asm("MOV R0, #2");      // Solo para identificar la tarea 1 en el debugger.
 
 
-//     uint32_t* ptrRam = (uint32_t*)0x70A10000;
+    uint32_t* ptrRam = (uint32_t*)0x90000000;
     
-//     while(1){
+    while(1){
         
-//         *ptrRam = ~(*ptrRam);
-//         ptrRam++;
+        *ptrRam = ~(*ptrRam);
+        ptrRam++;
 
-//         if(ptrRam >= (uint32_t*)0x70A1FFFF)
-//             ptrRam = (uint32_t*)0x70A10000;
-//     }
-// }
+        if(ptrRam >= (uint32_t*)0x9000FFFF)
+        {
+            ptrRam = (uint32_t*)0x90000000;
+            debug(0);
+            asm("WFI");
+        }
+    }
+}
 
 
 // __attribute__((section(".task1")))  __attribute__((naked)) void task1(){
@@ -90,13 +100,13 @@ __attribute__((section(".task1"), aligned(4), naked)) void task1(void){
 // }
 
 
-__attribute__((section(".task2"))) __attribute__((naked)) void task2(){
+// __attribute__((section(".task2"))) __attribute__((naked)) void task2(){
 
-    while(1)
-    {
-        asm("MOV R0, #2");
-        asm("WFI");
-        contador2++;
-        asm("PUSH {R0,R1}");
-    }
-}
+//     while(1)
+//     {
+//         asm("MOV R0, #2");
+//         asm("WFI");
+//         contador2++;
+//         asm("PUSH {R0,R1}");
+//     }
+// }
