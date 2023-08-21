@@ -4,8 +4,8 @@
 #                                                               #
 #@author        Lucas Liaño                                     #                                                                      #
 #@brief         Makefile para TD3.                              #
-#@date          25/05/2023                                      #
-#@credits       Schiavoni Leandro                               #
+#@date          21/08/2023                                      #
+#@credits       Leandro Schiavoni - Liam Duggan                 #
 #################################################################
 
 # Main folder name
@@ -15,7 +15,7 @@ ROOT_NAME = ${notdir ${shell pwd}}
 CHAIN=arm-none-eabi
 CFLAGS=-g -std=gnu99 -Wall -mcpu=cortex-a8 -MD -I${INC}
 ASFLAGS=-g -I${INC}
-LDFLAGS=-g --orphan-handling=discard -T
+LDFLAGS=-g -T
 
 # Folders
 # --- Added to .gitignore ---
@@ -29,17 +29,17 @@ SRC=src
 
 # List source files
 SRC_FILES_C = ${wildcard ${SRC}/*.c}
-OBJ_FILES_C = ${subst ${SRC},${OBJ},${SRC_FILES_C:.c=_c.o}}
+OBJ_FILES_C = ${subst ${SRC},${OBJ},${SRC_FILES_C:.c=_c.elf}}
 
 SRC_FILES_S = ${wildcard ${SRC}/*.s}
-OBJ_FILES_S = ${subst ${SRC},${OBJ},${SRC_FILES_S:.s=_s.o}}
+OBJ_FILES_S = ${subst ${SRC},${OBJ},${SRC_FILES_S:.s=_s.elf}}
 
 #################################################################
 ##                           Rules                             ##
 #################################################################
-default: build
+default: clean build
 
-build: $(BIN)/${ROOT_NAME}.bin $(OBJ)/${ROOT_NAME}.elf
+build: $(BIN)/${ROOT_NAME}.bin $(OBJ)/${ROOT_NAME}.lelf
 
 qemu:
 	qemu-system-arm -M realview-pb-a8 -m 512M -no-reboot -nographic -monitor telnet:127.0.0.1:1234,server,nowait -kernel ${BIN}/${ROOT_NAME}.bin -S -gdb tcp::2159
@@ -48,7 +48,7 @@ ddd:
 	cd .. && ddd --debugger gdb-multiarch ${ROOT_NAME}/${OBJ}/${ROOT_NAME}.elf
 
 debug:
-	qemu-system-arm -M realview-pb-a8 -m 512M -no-reboot -nographic -monitor telnet:127.0.0.1:1234,server,nowait -kernel ${BIN}/${ROOT_NAME}.bin -S -gdb tcp::2159 & gdb-multiarch -iex "add-auto-load-safe-path /" ${OBJ}/${ROOT_NAME}.elf
+	qemu-system-arm -M realview-pb-a8 -m 512M -no-reboot -nographic -monitor telnet:127.0.0.1:1234,server,nowait -kernel ${BIN}/${ROOT_NAME}.bin -S -gdb tcp::2159 & gdb-multiarch -iex "add-auto-load-safe-path /" ${OBJ}/${ROOT_NAME}.lelf
 
 clean:
 	rm -rf $(OBJ)
@@ -66,17 +66,17 @@ help:
 #################################################################
 ##                         Auto.  Rules                        ##
 #################################################################
-# .bin 	<- .elf
-# .elf 	<- .o
+# .bin 	<- .lelf
+# .lelf 	<- .o
 # .o 	<- .c .s
 
-# Generating .bin file from .elf
-$(BIN)/${ROOT_NAME}.bin: $(OBJ)/${ROOT_NAME}.elf
+# Generating .bin file from .lelf
+$(BIN)/${ROOT_NAME}.bin: $(OBJ)/${ROOT_NAME}.lelf
 	$(CHAIN)-objcopy -O binary $< $@
 
-# Generating .elf file from *.o
-$(OBJ)/${ROOT_NAME}.elf: ${OBJ_FILES_S} ${OBJ_FILES_C}
-	@echo "Linkeando..."
+# Generating .lelf file from *.elf
+$(OBJ)/${ROOT_NAME}.lelf: ${OBJ_FILES_S} ${OBJ_FILES_C}
+	@echo "\nLinkeando...\n"
 	@mkdir -p obj
 	@mkdir -p lst
 	$(CHAIN)-ld ${LDFLAGS} memmap.ld ${OBJ_FILES_S} ${OBJ_FILES_C} -o $@ -Map $(LST)/$(ROOT_NAME).map
@@ -87,22 +87,22 @@ $(OBJ)/${ROOT_NAME}.elf: ${OBJ_FILES_S} ${OBJ_FILES_C}
 	$(CHAIN)-objdump -D $@ > $(basename $@).lst
 
 # ASM sources assembly
-$(OBJ)/%_s.o: $(SRC)/%.s
+$(OBJ)/%_s.elf: $(SRC)/%.s
 	@echo ""
 	@mkdir -p bin
 	@mkdir -p obj
 	@mkdir -p lst
 	@echo "Assembling $<"
 	@echo "Assembling $@"
-	$(CHAIN)-as ${ASFLAGS} $< -o $@ -a > $(basename $@).lst
+	$(CHAIN)-as $< ${ASFLAGS} -o $@ -a > $(basename $@).lst
 
 # C sources compiling
-$(OBJ)/%_c.o: $(SRC)/%.c
+$(OBJ)/%_c.elf: $(SRC)/%.c
 	@echo ""
 	@mkdir -p bin
 	@mkdir -p obj
 	@mkdir -p lst
-	@echo "Compiling .c sources..."
+	@echo "\nCompiling .c sources...\n"
 	$(CHAIN)-gcc ${CFLAGS} -c $< -o $@
 
 
