@@ -45,7 +45,9 @@ _SVC_handler:
     MRS   R8, SPSR            //Se copia el contenido de SPSR a R8
     PUSH {R7, R8}             //Se guardan en la pila el valor de R7 y R8
 
-    @ NOTE: Revisar esto. BIC es bit clear, te limpia los bits del opcode
+    mov r10, r0     @ Guardo r0 para usarlo
+
+    @ NOTE: BIC es bit clear, te limpia los bits del opcode
     ldr r0, [lr, #-4]           @ guardo instruccion "svc" en r0 (la anterior a la addr de lr)
     bic r0,r0,#0xFF000000       @ obtengo numero de svc.
 

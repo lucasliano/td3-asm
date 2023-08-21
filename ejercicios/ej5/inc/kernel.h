@@ -47,7 +47,7 @@ typedef volatile struct {
 
 // Definición de los handlers en C
 void undef_kernel_handler ( void );
-void swi_kernel_handler ( void );
+void swi_kernel_handler ( uint32_t svc_code );
 void abort_kernel_handler ( void );
 void irq_kernel_handler ( void );
 void fiq_kernel_handler ( void );

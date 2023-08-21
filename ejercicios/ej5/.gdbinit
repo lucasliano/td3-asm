@@ -71,25 +71,25 @@ dashboard memory watch 0x90001000 16
 dashboard memory watch 0x9000F000 16
 
 # Debug breakpoint
-b* 0x7003023c
+# b* 0x7003023c
 
 # debugTask
 # b* 0x70030234
 
 
 
-# b* 0x70031964
+# b* 0x700302fc
 
 # break kernel_handlers.c:45
 # break mmu_primitives.c:258
 
 
-# b* 0x80000000
+b* 0x80000000
 # b* 0x8000000c
 
 # Exception breakpoints
 # b* 0x00000004
-# b* 0x00000008
+b* 0x00000008
 # b* 0x0000000C
 # b* 0x00000010
 # b* 0x00000014

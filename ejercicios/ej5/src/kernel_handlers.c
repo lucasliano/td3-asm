@@ -11,18 +11,76 @@ uint32_t currTask = 0;
 uint32_t timeframeCounter = 0;
 uint32_t currentTaskCounter = 0;
 
-__attribute__((section(".handlers"))) __attribute__((interrupt("undef"))) void undef_kernel_handler()
+uint32_t findNextAvailableTask( uint32_t currIndex )
 {
+    //-----------------------------------------------------//
+    // Devuelve el index de la siguiente tarea cuando hay
+    // sino devuelve 0, que se tiene que interpretar como
+    // una llamdada al kernelIdle
+    //-----------------------------------------------------//
+    
 
+    uint32_t i;
+
+    for (i = currIndex + 1; i < 16 ; i++)
+    {
+        if (taskVector[i].isActive)
+            return i;
+    }
+
+    return 0;
 }
 
-__attribute__((section(".handlers"))) __attribute__((interrupt("swi"))) void swi_kernel_handler()
+
+
+__attribute__((section(".handlers"))) __attribute__((interrupt("undef"))) void undef_kernel_handler()
 {
 
 }
 
 __attribute__((section(".handlers"))) __attribute__((interrupt("abort"))) void pref_abort_kernel_handler()
 {
+
+}
+
+__attribute__((section(".handlers"))) __attribute__((interrupt("fiq"))) void fiq_kernel_handler(){
+
+}
+
+__attribute__((section(".handlers"))) void swi_kernel_handler(uint32_t svc_code)
+{
+    uint32_t taskCodeAddr, taskCodeSize, taskTicks;
+
+    switch (svc_code)
+    {
+        case 0xF:
+
+
+            // TODO: Poner límite a la creación de tareas
+
+            // Los registros ahora tienen el siguiente contenido:
+            asm("STR R10,%0" : "=m"(taskCodeAddr));  // newTask Code Address
+            asm("STR R1,%0" : "=m"(taskCodeSize));  // newTask Code Size
+            asm("STR R2,%0" : "=m"(taskTicks));     // newTask ticks
+
+            // Desactivo la MMU
+            MMU_Disable();
+
+
+            // Agrego la tarea al scheduler
+            if (!loadTask(taskCodeAddr, taskCodeSize, taskTicks, taskVector[currTask].privilege))
+                cannot_create_task_debug();
+            
+
+            // Reactivo la MMU
+            MMU_Invalidate_TLB();
+            MMU_Enable();
+
+            break;
+        
+        default:
+            break;
+    }
 
 }
 
@@ -61,34 +119,10 @@ __attribute__((section(".handlers"))) void data_abort_kernel_handler()
     MMU_Enable();
 }
 
-
-uint32_t findNextAvailableTask( uint32_t currIndex )
-{
-    //-----------------------------------------------------//
-    // Devuelve el index de la siguiente tarea cuando hay
-    // sino devuelve 0, que se tiene que interpretar como
-    // una llamdada al kernelIdle
-    //-----------------------------------------------------//
-    
-
-    uint32_t i;
-
-    for (i = currIndex + 1; i < 16 ; i++)
-    {
-        if (taskVector[i].isActive)
-            return i;
-    }
-
-    return 0;
-}
-
-
 __attribute__((section(".handlers"))) __attribute__((naked)) void irq_kernel_handler(){
     _gicc_t* const GICC0 = (_gicc_t*)GICC0_ADDR;
     _timer_t* const TIMER0 = (_timer_t*)TIMER0_ADDR;
 
-    // static uint32_t timeframeCounter = 0;
-    // static uint32_t currentTaskCounter = 0;
     uint32_t nextTask;
 
     uint32_t id = GICC0->IAR;
@@ -138,7 +172,7 @@ __attribute__((section(".handlers"))) __attribute__((naked)) void irq_kernel_han
                 }
             }else{
                 // Saltamos de kernelIdle a task0
-                timeframeCounter = 5 - 1;
+                timeframeCounter = 10 - 1;
                 
                 // FIXME: La tarea 1 siempre tiene que estar activa
                 currTask = 1;
@@ -161,7 +195,3 @@ __attribute__((section(".handlers"))) __attribute__((naked)) void irq_kernel_han
 
     asm("BX LR");
 } 
-
-__attribute__((section(".handlers"))) __attribute__((interrupt("fiq"))) void fiq_kernel_handler(){
-
-}

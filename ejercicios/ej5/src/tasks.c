@@ -55,7 +55,7 @@ __attribute__((section(".task1"), aligned(4), naked)) void task1(void){
         if(ptrRam >= (uint32_t*)0x9000FFFF)
         {
             ptrRam = (uint32_t*)0x90000000;            
-            debug(0);
+            // debug(0);
             asm("WFI");
         }
     }
@@ -81,15 +81,41 @@ __attribute__((section(".task2"), aligned(4), naked)) void task2(void){
         if(ptrRam >= (uint32_t*)0x9000FFFF)
         {
             ptrRam = (uint32_t*)0x90000000;
-            debug(0);
+            // debug(0);
             asm("WFI");
         }
     }
 }
 
 
-// __attribute__((section(".task1")))  __attribute__((naked)) void task1(){
+extern int _TASK0_LMA;
+extern int _task0_size;
+__attribute__((section(".task3"), aligned(4))) void task3(void)
+{
+    asm("MOV R0, #3");
 
+    uint32_t taskCodeAddress = (uint32_t) &_TASK0_LMA;
+    uint32_t taskCodeSize = (uint32_t) &_task0_size;
+
+    while(1)
+    {
+
+        // Cargo los parámetros que le quiero pasar a la función create Task
+        asm("LDR R0,%0" : "=m"(taskCodeAddress));   // newTask Code Address
+        asm("LDR R1,%0" : "=m"(taskCodeSize));      // newTask Code Size
+        asm("MOV R2, #1");                          // newTask ticks
+        asm("MOV R3, #1");                          // newTask privileges = SYS
+
+        asm("SVC #0xF");
+
+
+        asm("WFI");
+    }
+}
+
+
+// __attribute__((section(".task1")))  __attribute__((naked)) void task1()
+// {
 //     while(1)
 //     {
 //         asm("MOV R0, #1");
@@ -100,8 +126,8 @@ __attribute__((section(".task2"), aligned(4), naked)) void task2(void){
 // }
 
 
-// __attribute__((section(".task2"))) __attribute__((naked)) void task2(){
-
+// __attribute__((section(".task2"))) __attribute__((naked)) void task2()
+// {
 //     while(1)
 //     {
 //         asm("MOV R0, #2");

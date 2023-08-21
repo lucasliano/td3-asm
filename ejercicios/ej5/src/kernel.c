@@ -20,6 +20,8 @@ extern int _TASK1_LMA;
 extern int _task1_size;
 extern int _TASK2_LMA;
 extern int _task2_size;
+extern int _TASK3_LMA;
+extern int _task3_size;
 
 
 // --- Global Variables ---
@@ -28,7 +30,7 @@ TCB_t taskVector[16];
 // |  Region |  Offset |          Size         |   hex(Size)   |
 // |---------|---------|-----------------------|---------------|
 // |  Tables |   0x0   |         64 kiB        |  0x0001_0000  |
-// |  Stacks | 0x10000 | 60 KiB (sobran 4 KiB) |  0x0000_fffc  |
+// |  Stacks | 0x10000 |  64 KiB (sobran 16B)  |  0x0000_fffc  |
 // |   Code  | 0x20000 |         15 MiB        |  0x00fe_ffff  |
 
 
@@ -150,11 +152,6 @@ uint32_t loadTask(uint32_t romBasePhy, uint32_t romSize, uint32_t ticks, uint32_
     taskVector[taskIndex].isActive = 1;
     taskVector[taskIndex].ticks = ticks;
     taskVector[taskIndex].privilege = privileges;
-
-    // === Desactivo paginación ===
-    // TODO: Averiguar si la MMU estaba prendida para saber si apagarla y volver a prender dsps
-    // TODO: Agregar TLB clean
-    // MMU_Disable();
     
     // === Copio de ROM a RAM la tarea ===
     memcopy((const void *) romBasePhy, (void *) taskVector[taskIndex].taskCodeBasePhy , romSize);
@@ -179,7 +176,6 @@ uint32_t loadTask(uint32_t romBasePhy, uint32_t romSize, uint32_t ticks, uint32_
     }
 
     // Creo páginas para los stacks de la tarea
-    // TODO: Reemplazar 0x10000 por _SYSTABLES_PHY_SIZE
     for (i = taskVector[taskIndex].TTBR0 + 0x10000; i < taskVector[taskIndex].TTBR0 + 0x20000 ; i+= (uint32_t)&_SYSTABLES_PAGE_SIZE)
     {
         vmaOffset = i - (taskVector[taskIndex].TTBR0 + 0x10000);
@@ -198,9 +194,6 @@ uint32_t loadTask(uint32_t romBasePhy, uint32_t romSize, uint32_t ticks, uint32_
     // Le paso la dirección PHY donde del SP_IRQ
     // _preloadStack(taskVector[taskIndex].TTBR0 + (uint32_t) &_SYSTABLES_PHY_SIZE + (2 * (uint32_t) &_STACK_SIZE));
     preloadStacks(taskVector[taskIndex]);
-
-    // === Reactivo paginación ===
-    // MMU_Enable();
 
 
     return TRUE;
@@ -246,17 +239,17 @@ void kernelInit(void)
     // Inicializo las tareas con las que amanece el sistem
     //------------------------------------------------------------------------------//
     
-    // FIXME: Yo quería que puedas pasarle un ptr a función, pero el tenes que pasar la LMA
-    // if (loadTask(&kernelBackground, 16, 10, SYS)) // Siempre tenemos que amanecer con alguna tarea
-    
     // La primer tarea es el KernelIdle
-    if (loadTask((uint32_t) &_TASK0_LMA, (uint32_t) &_task0_size, 1, SYS))
+    if (!loadTask((uint32_t) &_TASK0_LMA, (uint32_t) &_task0_size, 1, SYS))
         cannot_create_task_debug();
     
-    if (loadTask((uint32_t) &_TASK1_LMA, (uint32_t) &_task1_size, 1, USR))
+    if (!loadTask((uint32_t) &_TASK1_LMA, (uint32_t) &_task1_size, 1, USR))
         cannot_create_task_debug();
 
-    if (loadTask((uint32_t) &_TASK2_LMA, (uint32_t) &_task2_size, 1, USR))
+    if (!loadTask((uint32_t) &_TASK2_LMA, (uint32_t) &_task2_size, 1, USR))
+        cannot_create_task_debug();
+
+    if (!loadTask((uint32_t) &_TASK3_LMA, (uint32_t) &_task3_size, 1, SYS))
         cannot_create_task_debug();
 
     

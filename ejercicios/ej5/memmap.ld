@@ -34,7 +34,7 @@ _KERNEL_CODE_PHY = _RAM_INIT; /* 0x70030000 */
 /* --- NOTE: De acá en adelante es dinámico el asunto --- */
 /* >>> Stack TOPS <<< */
 _KERNEL_STACKS_PHY = 0x70F00000;
-_STACK_SIZE = 0x2aaa; /* 10kiB por modo 60kiB (0xfffc) en total */
+_STACK_SIZE = 0x2aa8; /* 10kiB por modo 60kiB (0xfffc) en total */
 
 /* >>> Page Tables <<< */
 /* _SYSTABLES_PHY se define abajo */
@@ -141,7 +141,14 @@ SECTIONS{
     { 
         *(.task2)
     }
-    _task2_size = SIZEOF(.task2);    
+    _task2_size = SIZEOF(.task2);
+
+    _TASK3_LMA = LOADADDR(.task2) + SIZEOF(.task2);
+    .task3 0x80000000 : AT (_TASK3_LMA)
+    { 
+        *(.task3)
+    }
+    _task3_size = SIZEOF(.task3);   
     
 }
 
