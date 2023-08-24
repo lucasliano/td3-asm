@@ -78,7 +78,7 @@ __attribute__((section(".task2"), aligned(4), naked)) void task2(void){
         *ptrRam = ~(*ptrRam);
         ptrRam++;
 
-        if(ptrRam >= (uint32_t*)0x9000FFFF)
+        if(ptrRam >= (uint32_t*)0x9000EFFF)
         {
             ptrRam = (uint32_t*)0x90000000;
             // debug(0);
@@ -97,16 +97,25 @@ __attribute__((section(".task3"), aligned(4))) void task3(void)
     uint32_t taskCodeAddress = (uint32_t) &_TASK0_LMA;
     uint32_t taskCodeSize = (uint32_t) &_task0_size;
 
+    uint32_t contador = 0;
+
     while(1)
     {
+        // La tarea se encarga de agregar otras 3 tareas IDLE y dsps queda en WFI.
 
-        // Cargo los parámetros que le quiero pasar a la función create Task
-        asm("LDR R0,%0" : "=m"(taskCodeAddress));   // newTask Code Address
-        asm("LDR R1,%0" : "=m"(taskCodeSize));      // newTask Code Size
-        asm("MOV R2, #1");                          // newTask ticks
-        asm("MOV R3, #1");                          // newTask privileges = SYS
+        if (contador < 3)
+        {
+            // Cargo los parámetros que le quiero pasar a la función create Task
+            asm("LDR R0,%0" : "=m"(taskCodeAddress));   // newTask Code Address
+            asm("LDR R1,%0" : "=m"(taskCodeSize));      // newTask Code Size
+            asm("MOV R2, #1");                          // newTask ticks
+            asm("MOV R3, #1");                          // newTask privileges = SYS
 
-        asm("SVC #0xF");
+            asm("SVC #0xF");
+            
+            contador++;
+        }
+
 
 
         asm("WFI");
