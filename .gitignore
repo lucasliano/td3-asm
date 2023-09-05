@@ -3,3 +3,4 @@ bin/
 lst/
 .gdb_history
 .vscode/
+*.o
