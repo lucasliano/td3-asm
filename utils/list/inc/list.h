@@ -1,4 +1,5 @@
 /* Author: Lucas Liaño (2023)
+ * Thanks to Ezequiel Gonzalez for making this possible!
  *
  * Implementation of a simpled linked list in C.
  * This example was deeply inspired by the Tutorialspoint's one.
@@ -29,16 +30,13 @@ typedef struct node_t{
    struct node_t *next;
 } node_t;
 
-typedef struct list_t{
-   node_t *head;
-} list_t;
 
-void list_print(list_t list); // This method shall be changed by the user.
+void list_print(node_t* list); // This method shall be changed by the user.
 
-void list_append(list_t list, int data);
-int list_pop(list_t list, int index);
-int list_search(list_t list, int index);
-void list_sort(list_t list);
+void list_insert(node_t** list, int data);
+int list_pop(node_t** list, int index);
+int list_search(node_t** list, int index);
+void list_sort(node_t** list);
 
 
 #endif /* defined(__LIST_H) */

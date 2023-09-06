@@ -2,6 +2,8 @@
  * This example was deeply inspired by the Tutorialspoint's one.
  *
  * See the list.h for more details.
+ * 
+ * 
 */
 
 #include "list.h"
@@ -16,17 +18,17 @@ void list_print(list_t list)
    * @return None.
    ******************************************************************************/
    node_t *p = list.head;
-   printf("\n[");
+   printf("\n[\n");
 
    //start from the beginning
    while(p != NULL) {
-      printf("Index: %d - Addr: %p ",p->index, p);
+      printf("Index: %d - Addr: %p - Data: %d\n",p->index, p, p->data);
       p = p->next;
    }
    printf("]\n");
 }
 
-void list_append(list_t list, int data)
+void list_append(list_t *list, int data)
 {
    /*******************************************************************************
    * Adds a node at the end of the list.
@@ -38,8 +40,17 @@ void list_append(list_t list, int data)
    ******************************************************************************/
 
    //create a link
-   node_t *linkedlist = list.head;
+   
+   node_t *linkedlist = list->head;
    node_t *new_node = (node_t*) malloc(sizeof(node_t));
+   
+   if(list->head == NULL){
+       new_node->data = data;
+       new_node->index = 0;
+       new_node->next = NULL;
+       list->head = new_node;
+       return;
+   }
 
    // point it to old first node
    while(linkedlist->next != NULL)
@@ -48,7 +59,8 @@ void list_append(list_t list, int data)
    //point first to new first node
    linkedlist->next = new_node;
    new_node->data = data;
-   new_node->index = linkedlist->index;
+   new_node->index = (linkedlist->index)+1;
+   new_node->next = NULL;
 }
 
 int list_pop(list_t list, int index)
@@ -65,7 +77,7 @@ int list_pop(list_t list, int index)
 
    // If the list is empty
    if (temp == NULL) 
-      return NULL;
+      return 0;
 
    // Find the key to be deleted
    while (temp != NULL && temp->index != index) {
@@ -75,10 +87,19 @@ int list_pop(list_t list, int index)
 
    // Remove the node
    prev->next = temp->next;
+   
+   int eliminatedData = temp->data;
+   
+   //Update indexes
+   temp = temp->next;
+   while(temp != NULL){
+       temp->index -= 1;
+       temp = temp->next;
+   }
 
    //FIXME: Memory should be free here
 
-   return temp->data;
+   return eliminatedData;
 }
 
 int list_search(list_t list, int index)
@@ -95,7 +116,7 @@ int list_search(list_t list, int index)
 
    // If the list is empty
    if (temp == NULL) 
-      return NULL;
+      return 0;
 
    // Find the key to be deleted
    while (temp != NULL && temp->index != index) {
@@ -106,22 +127,6 @@ int list_search(list_t list, int index)
    return temp->data;
 }
 
-void list_sort(list_t list)
-{
-   /*******************************************************************************
-   * Sorts the list.
-   *
-   * @param list List that will be used.
-   * 
-   * @return None.
-   ******************************************************************************/
-
-
-
-   // TODO: Implement
-
-   return 0;
-}
 
 
 // ------------ Test Program ------------
@@ -135,11 +140,11 @@ void main(){
    // Init list
    my_list.head = NULL;
 
-   list_append(my_list, 12);
-   list_append(my_list, 22);
-   list_append(my_list, 30);
-   list_append(my_list, 44);
-   list_append(my_list, 50);
+   list_append(&my_list, 12);
+   list_append(&my_list, 22);
+   list_append(&my_list, 30);
+   list_append(&my_list, 44);
+   list_append(&my_list, 50);
    printf("Linked List: ");
    list_print(my_list);
 

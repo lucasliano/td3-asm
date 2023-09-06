@@ -70,6 +70,9 @@ def create_L2(basePhy):
     print(f'New L2: {hex(final_descriptor)}')
 
 
+def CPSR(reg):
+    print(f'MODE: {hex(reg & 0b11111)}')
+
 
 if __name__ == '__main__':
     code.interact(local=locals())
